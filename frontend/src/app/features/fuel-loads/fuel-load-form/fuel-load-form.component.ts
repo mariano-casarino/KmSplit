@@ -7,6 +7,7 @@ import { Settlement } from '../../../core/models/settlement.model';
 import { FuelLoad } from '../../../core/models/fuel-load.model';
 import { FuelLoadService } from '../../../core/services/fuel-load.service';
 import { SettlementService } from '../../../core/services/settlement.service';
+import { VehicleService } from '../../../core/services/vehicle.service';
 import { formatKm } from '../../../core/utils/format-args';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 
@@ -23,6 +24,7 @@ export class FuelLoadFormComponent {
   private router = inject(Router);
   private fuelLoadService = inject(FuelLoadService);
   private settlementService = inject(SettlementService);
+  private vehicleService = inject(VehicleService);
 
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
   /** Si estamos editando una carga existente, su id viene por ?edit=. */
@@ -197,6 +199,8 @@ export class FuelLoadFormComponent {
     request$.subscribe({
       next: () => {
         this.loading.set(false);
+        // la carga cambió los km/balances -> el dashboard cacheado queda viejo
+        this.vehicleService.invalidate(this.vehicleId);
         if (editId) {
           // animación de éxito (~1s) antes de volver a la vista de carga
           this.saveSuccess.set(true);

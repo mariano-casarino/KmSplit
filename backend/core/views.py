@@ -8,8 +8,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 
-import redis
-
 from .models import FuelLoad, Group, GroupMembership, Settlement, Trip, Vehicle
 from .permissions import CanEditFuelLoad, CanEditTrip, get_membership
 from .serializers import (
@@ -38,9 +36,12 @@ def health_check(request):
         result["db"] = "error"
 
     redis_url = getattr(settings, "REDIS_URL", "")
-    if redis_url:
+    if redis_url and settings.CACHES["default"]["BACKEND"].endswith("RedisCache"):
         try:
-            redis.from_url(redis_url, socket_connect_timeout=2).ping()
+            # Usa el cliente poolado de Django (misma conexión reutilizada entre
+            # requests) en lugar de abrir una conexión Redis nueva por ping.
+            cache.set("health_ping", "1", 10)
+            cache.get("health_ping")
             result["redis"] = "ok"
         except Exception:
             result["redis"] = "error"

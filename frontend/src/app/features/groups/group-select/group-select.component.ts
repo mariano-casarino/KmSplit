@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
+import { User } from '../../../core/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
 
@@ -23,11 +24,19 @@ export class GroupSelectComponent {
   errorMessage = signal<string | null>(null);
   selectingId = signal<number | null>(null);
 
+  /** Usuario reactivo: fetchMe corre en paralelo con la lista de grupos y
+   *  puede terminar después (los roles se calculan sobre un signal). */
+  private user = signal<User | null>(this.auth.getCurrentUser());
+
   constructor() {
+    // fetchMe y la lista corren en paralelo: la lista no depende del usuario.
     this.auth.fetchMe().subscribe({
-      next: () => this.load(),
-      error: () => this.load(),
+      next: (user) => this.user.set(user),
+      error: () => {
+        /* los roles quedan ocultos, no bloqueamos la lista */
+      },
     });
+    this.load();
   }
 
   private load(): void {
@@ -68,7 +77,7 @@ export class GroupSelectComponent {
   }
 
   myRole(group: Group): string {
-    const userId = this.auth.getCurrentUser()?.id;
+    const userId = this.user()?.id;
     const membership = group.members.find((m) => m.user === userId);
     if (!membership) return '';
     if (membership.role === 'owner') return 'Owner';

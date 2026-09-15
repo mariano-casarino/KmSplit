@@ -249,6 +249,8 @@ export class TripFormComponent implements OnInit {
     request$.subscribe({
       next: () => {
         this.loading.set(false);
+        // el viaje cambió -> el dashboard cacheado (resumen/historial) queda viejo
+        this.vehicleService.invalidate(this.vehicleId);
         if (this.returnTo === 'viaje') {
           this.reloadContext();
         } else {

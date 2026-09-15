@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 import { Group, GroupMembership } from '../models/group.model';
 
 /** Cuánto vive un grupo cacheado (evita dato stale si cambian miembros/roles). */
-const CACHE_TTL_MS = 30_000;
+const CACHE_TTL_MS = 60_000;
 
 @Injectable({ providedIn: 'root' })
 export class GroupService {
@@ -18,8 +18,18 @@ export class GroupService {
   /** Cache simple en memoria: id -> { group, fetchedAt }. */
   private cache = new Map<number, { group: Group; fetchedAt: number }>();
 
+  /** Cache de la lista de grupos del usuario. */
+  private listCache: { groups: Group[]; fetchedAt: number } | null = null;
+
   list(): Observable<Group[]> {
-    return this.http.get<Group[]>(`${this.baseUrl}/`);
+    if (this.listCache && Date.now() - this.listCache.fetchedAt < CACHE_TTL_MS) {
+      return of(this.listCache.groups);
+    }
+    return this.http.get<Group[]>(`${this.baseUrl}/`).pipe(
+      tap((groups) => {
+        this.listCache = { groups, fetchedAt: Date.now() };
+      }),
+    );
   }
 
   /** El id del grupo en el que el usuario está trabajando ahora. */
@@ -47,16 +57,29 @@ export class GroupService {
     );
   }
 
+  /** Limpia todos los caches de grupos (lista + detalles pedidos). Llamar
+   *  después de crear/unirse/abandonar un grupo o cambiar miembros. */
+  invalidate(): void {
+    this.cache.clear();
+    this.listCache = null;
+  }
+
   create(name: string): Observable<Group> {
-    return this.http.post<Group>(`${this.baseUrl}/`, { name });
+    return this.http.post<Group>(`${this.baseUrl}/`, { name }).pipe(
+      tap(() => (this.listCache = null)),
+    );
   }
 
   join(inviteCode: string): Observable<Group> {
-    return this.http.post<Group>(`${this.baseUrl}/join/`, { invite_code: inviteCode });
+    return this.http.post<Group>(`${this.baseUrl}/join/`, { invite_code: inviteCode }).pipe(
+      tap(() => (this.listCache = null)),
+    );
   }
 
   leave(groupId: number): Observable<{ detail: string }> {
-    return this.http.post<{ detail: string }>(`${this.baseUrl}/${groupId}/leave/`, {});
+    return this.http
+      .post<{ detail: string }>(`${this.baseUrl}/${groupId}/leave/`, {})
+      .pipe(tap(() => this.invalidate()));
   }
 
   updateMember(
@@ -66,6 +89,6 @@ export class GroupService {
   ): Observable<GroupMembership> {
     return this.http
       .patch<GroupMembership>(`${this.baseUrl}/${groupId}/members/${userId}/`, data)
-      .pipe(tap(() => this.cache.delete(groupId)));
+      .pipe(tap(() => this.invalidate()));
   }
 }

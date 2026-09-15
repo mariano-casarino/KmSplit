@@ -87,6 +87,8 @@ export class SettlementDetailComponent implements OnInit {
       next: (updated) => {
         this.settlement.set(updated);
         this.updatingStatus.set(false);
+        // el estado sale en el dashboard cacheado (resumen/liquidaciones)
+        this.vehicleService.invalidate(this.vehicleId);
       },
       error: () => {
         this.updatingStatus.set(false);
@@ -124,6 +126,8 @@ export class SettlementDetailComponent implements OnInit {
     this.fuelLoadService.delete(settlement.fuel_load).subscribe({
       next: () => {
         this.deleting.set(false);
+        // borramos una carga -> sus viajes/liquidaciones salen del dashboard
+        this.vehicleService.invalidate(this.vehicleId);
         this.router.navigate(
           this.from === 'carga'
             ? ['/vehiculo', this.vehicleId, 'carga']

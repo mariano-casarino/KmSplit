@@ -5,8 +5,11 @@ import { Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Dashboard, Vehicle } from '../models/vehicle.model';
 
-/** Cuánto vive un vehículo cacheado (evita dato stale si cambia en otro lado). */
-const CACHE_TTL_MS = 30_000;
+/** Cuánto vive la data cacheada en memoria. Evita re-pedir lo mismo al
+ *  servidor en cada navegación (~0.3s de RTT por request). Las mutaciones
+ *  invalidan las entradas afectadas (invalidate()), así que el dato stale
+ *  solo puede durar este TTL si la invalidación se olvidara en algún flujo. */
+const CACHE_TTL_MS = 60_000;
 
 @Injectable({ providedIn: 'root' })
 export class VehicleService {
@@ -19,8 +22,21 @@ export class VehicleService {
    *  repetidas del mismo vehículo entre pantallas de una misma sesión. */
   private cache = new Map<number, { vehicle: Vehicle; fetchedAt: number }>();
 
+  /** Cache del dashboard (la vista más pesada): id -> { data, fetchedAt }. */
+  private dashboardCache = new Map<number, { data: Dashboard; fetchedAt: number }>();
+
+  /** Cache de la lista completa de vehículos. */
+  private listCache: { vehicles: Vehicle[]; fetchedAt: number } | null = null;
+
   list(): Observable<Vehicle[]> {
-    return this.http.get<Vehicle[]>(`${this.baseUrl}/`);
+    if (this.listCache && Date.now() - this.listCache.fetchedAt < CACHE_TTL_MS) {
+      return of(this.listCache.vehicles);
+    }
+    return this.http.get<Vehicle[]>(`${this.baseUrl}/`).pipe(
+      tap((vehicles) => {
+        this.listCache = { vehicles, fetchedAt: Date.now() };
+      }),
+    );
   }
 
   get(id: number): Observable<Vehicle> {
@@ -34,18 +50,45 @@ export class VehicleService {
   }
 
   /** Endpoint consolidado: vehicle + group + trips + fuelLoads + settlements
-   *  en 1 sola request. Reemplaza los forkJoin de 4-5 round-trips. */
+   *  en 1 sola request. La respuesta se cachea en memoria (TTL 60s) para que
+   *  resumen/historial/liquidaciones naveguen al instante; se invalida al
+   *  registrar o editar viajes/cargas (invalidate()). */
   dashboard(id: number): Observable<Dashboard> {
-    return this.http.get<Dashboard>(`${this.baseUrl}/${id}/dashboard/`);
+    const hit = this.dashboardCache.get(id);
+    if (hit && Date.now() - hit.fetchedAt < CACHE_TTL_MS) {
+      return of(hit.data);
+    }
+    return this.http.get<Dashboard>(`${this.baseUrl}/${id}/dashboard/`).pipe(
+      tap((data) => this.dashboardCache.set(id, { data, fetchedAt: Date.now() })),
+    );
+  }
+
+  /** Limpia los caches de un vehículo (lista, detalle y dashboard). Llamar
+   *  después de cualquier mutación que cambie su data (viaje, carga, foto...). */
+  invalidate(id?: number): void {
+    this.listCache = null;
+    if (id !== undefined) {
+      this.cache.delete(id);
+      this.dashboardCache.delete(id);
+    }
   }
 
   create(data: Partial<Vehicle>): Observable<Vehicle> {
-    return this.http.post<Vehicle>(`${this.baseUrl}/`, data);
+    return this.http.post<Vehicle>(`${this.baseUrl}/`, data).pipe(
+      tap((vehicle) => {
+        this.cache.set(vehicle.id, { vehicle, fetchedAt: Date.now() });
+        this.listCache = null;
+      }),
+    );
   }
 
   update(id: number, data: Partial<Vehicle>): Observable<Vehicle> {
     return this.http.patch<Vehicle>(`${this.baseUrl}/${id}/`, data).pipe(
-      tap((updated) => this.cache.set(id, { vehicle: updated, fetchedAt: Date.now() })),
+      tap((updated) => {
+        this.cache.set(id, { vehicle: updated, fetchedAt: Date.now() });
+        this.dashboardCache.delete(id);
+        this.listCache = null;
+      }),
     );
   }
 

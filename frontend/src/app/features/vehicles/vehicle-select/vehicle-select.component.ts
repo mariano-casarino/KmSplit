@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
+import { User } from '../../../core/models/user.model';
 import { Vehicle } from '../../../core/models/vehicle.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
@@ -31,21 +32,22 @@ export class VehicleSelectComponent {
 
   lastVehicleId: number | null = null;
 
+  /** Usuario reactivo (el fetchMe corre en paralelo con el grupo y la lista,
+   *  así que puede terminar después: los roles se calculan sobre un signal). */
+  private user = signal<User | null>(this.auth.getCurrentUser());
+
+  /** Vehículos sin filtrar por grupo, para no encadenar el listado detrás de
+   *  la carga del grupo (antes: me -> grupo -> vehículos, 3 round-trips
+   *  seriales). Ahora los 3 corren en paralelo. */
+  private allVehicles: Vehicle[] = [];
+  private groupLoaded = false;
+  private vehiclesLoaded = false;
+
   // Copia del grupo que está por abandonar, para el diálogo de confirmación
   pendingLeaveGroup = signal<Group | null>(null);
 
   constructor() {
-    this.auth.fetchMe().subscribe({
-      next: () => this.loadActiveGroup(),
-      error: () => this.loadActiveGroup(),
-    });
-
     this.lastVehicleId = this.vehicleService.getLastVehicleId();
-  }
-
-  private loadActiveGroup(): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
 
     const activeGroupId = this.groupService.getActiveGroupId();
 
@@ -55,10 +57,23 @@ export class VehicleSelectComponent {
       return;
     }
 
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
+    // fetchMe, grupo y vehículos en paralelo: ninguno depende del otro.
+    // fetchMe es resiliente: si falla, la lista igual se muestra.
+    this.auth.fetchMe().subscribe({
+      next: (user) => this.user.set(user),
+      error: () => {
+        /* los roles quedan ocultos, no bloqueamos la lista */
+      },
+    });
+
     this.groupService.get(activeGroupId).subscribe({
       next: (group) => {
         this.group.set(group);
-        this.loadVehicles(group.id);
+        this.groupLoaded = true;
+        this.applyVehicles();
       },
       error: () => {
         // el grupo activo ya no existe (nos sacaron, lo borraron...) ->
@@ -67,19 +82,28 @@ export class VehicleSelectComponent {
         this.router.navigate(['/grupos/selector']);
       },
     });
-  }
 
-  private loadVehicles(groupId: number): void {
     this.vehicleService.list().subscribe({
       next: (vehicles) => {
-        this.vehicles.set(vehicles.filter((v) => v.group === groupId));
-        this.loading.set(false);
+        this.allVehicles = vehicles;
+        this.vehiclesLoaded = true;
+        this.applyVehicles();
       },
       error: () => {
         this.errorMessage.set('No pudimos cargar tus vehículos.');
         this.loading.set(false);
       },
     });
+  }
+
+  private applyVehicles(): void {
+    const group = this.group();
+    if (group) {
+      this.vehicles.set(this.allVehicles.filter((v) => v.group === group.id));
+    }
+    if (this.groupLoaded && this.vehiclesLoaded) {
+      this.loading.set(false);
+    }
   }
 
   copyInviteCode(): void {
@@ -95,14 +119,14 @@ export class VehicleSelectComponent {
   }
 
   iAmOwner(group: Group): boolean {
-    const userId = this.auth.getCurrentUser()?.id;
+    const userId = this.user()?.id;
     if (userId === undefined) return false;
     return group.members.some((m) => m.user === userId && m.role === 'owner');
   }
 
   /** True si soy dueño y además el único integrante activo del grupo. */
   iAmSoleOwner(group: Group): boolean {
-    const userId = this.auth.getCurrentUser()?.id;
+    const userId = this.user()?.id;
     if (userId === undefined) return false;
     const active = group.members.filter((m) => m.is_active);
     return (
