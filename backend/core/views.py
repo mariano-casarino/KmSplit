@@ -1,4 +1,6 @@
 from django.core.cache import cache
+from django.db import connection
+from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -17,6 +19,17 @@ from .serializers import (
     VehicleSerializer,
 )
 from . import services
+
+
+def health_check(request):
+    """GET /api/health/ — sin auth. Lo usan los pings de keep-alive
+    (UptimeRobot o el cron de Vercel) para mantener el container despierto,
+    y verifica que la base de datos responda."""
+    try:
+        connection.ensure_connection()
+        return JsonResponse({"status": "ok"})
+    except Exception as exc:
+        return JsonResponse({"status": "error", "detail": str(exc)}, status=503)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
