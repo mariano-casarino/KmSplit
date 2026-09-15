@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from django.http import JsonResponse
@@ -6,6 +7,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+
+import redis
 
 from .models import FuelLoad, Group, GroupMembership, Settlement, Trip, Vehicle
 from .permissions import CanEditFuelLoad, CanEditTrip, get_membership
@@ -24,12 +27,28 @@ from . import services
 def health_check(request):
     """GET /api/health/ — sin auth. Lo usan los pings de keep-alive
     (UptimeRobot o el cron de Vercel) para mantener el container despierto,
-    y verifica que la base de datos responda."""
+    y reporta el estado de la base y del Redis configurado."""
+    result = {"db": "ok", "redis": "not-configured"}
+
+    db_ok = True
     try:
         connection.ensure_connection()
-        return JsonResponse({"status": "ok"})
-    except Exception as exc:
-        return JsonResponse({"status": "error", "detail": str(exc)}, status=503)
+    except Exception:
+        db_ok = False
+        result["db"] = "error"
+
+    redis_url = getattr(settings, "REDIS_URL", "")
+    if redis_url:
+        try:
+            redis.from_url(redis_url, socket_connect_timeout=2).ping()
+            result["redis"] = "ok"
+        except Exception:
+            result["redis"] = "error"
+
+    result["status"] = "ok" if db_ok else "error"
+    if db_ok:
+        return JsonResponse(result)
+    return JsonResponse(result, status=503)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
