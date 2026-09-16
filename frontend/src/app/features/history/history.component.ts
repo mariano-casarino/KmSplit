@@ -262,6 +262,15 @@ export class HistoryComponent implements OnInit {
     this.showAllGaps.update((v) => !v);
   }
 
+  /** Abre el form de viaje con el km inicial del hueco ya prefijado
+   *  (?kmInicio=). Al guardar, vuelve al mismo histórico (returnTo). */
+  onGapClick(gap: KmGap): void {
+    const returnTo = this.scope === 'week' ? 'week' : 'full';
+    this.router.navigate(['/vehiculo', this.vehicleId, 'viaje'], {
+      queryParams: { returnTo, kmInicio: gap.gapStartKm },
+    });
+  }
+
   memberName(userId: number): string {
     return this.group()?.members.find((m) => m.user === userId)?.user_name ?? 'Usuario';
   }

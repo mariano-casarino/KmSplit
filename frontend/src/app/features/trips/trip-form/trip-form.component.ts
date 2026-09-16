@@ -71,6 +71,12 @@ export class TripFormComponent implements OnInit {
     // ajeno, según permisos), viene marcado en la URL: ?tripId=123
     const tripIdToEdit = this.route.snapshot.queryParamMap.get('tripId');
 
+    // desde un "Km sin registrar" del historial: ?kmInicio=12345 abre el form
+    // con el km inicial del hueco ya prefijado en vez del último km registrado
+    const kmInicioRaw = this.route.snapshot.queryParamMap.get('kmInicio');
+    const kmInicio = kmInicioRaw === null ? NaN : Number(kmInicioRaw);
+    const gapStartKm = Number.isFinite(kmInicio) && kmInicio >= 0 ? kmInicio : null;
+
     // Velocidad: usuario, vehículo y viajes son independientes -> paralelo.
     // fetchMe es resiliente: si falla, el formulario igual se arma (solo se
     // pierde el nombre del usuario logueado por defecto).
@@ -86,9 +92,9 @@ export class TripFormComponent implements OnInit {
           (latest, t) => (!latest || t.id > latest.id ? t : latest),
           null,
         );
-        this.defaultStartKm = lastRegisteredTrip
-          ? lastRegisteredTrip.end_km
-          : vehicle.current_km;
+        this.defaultStartKm =
+          gapStartKm ??
+          (lastRegisteredTrip ? lastRegisteredTrip.end_km : vehicle.current_km);
         this.form.patchValue({ start_km: this.defaultStartKm });
 
         const ownTrips = user
