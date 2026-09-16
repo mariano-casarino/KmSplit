@@ -29,8 +29,15 @@ export class SettlementDetailComponent implements OnInit {
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
   settlementId = Number(this.route.snapshot.paramMap.get('settlementId'));
 
-  /** Desde dónde se abrió la liquidación: 'carga' o 'historial'. */
+  /** Desde dónde se abrió la liquidación: 'carga', 'resumen' o 'historial'. */
   from = this.route.snapshot.queryParamMap.get('from') ?? 'historial';
+
+  /** Ruta de "volver" según el origen de la visita. */
+  backRoute(): (string | number)[] {
+    if (this.from === 'carga') return ['/vehiculo', this.vehicleId, 'carga'];
+    if (this.from === 'resumen') return ['/vehiculo', this.vehicleId, 'resumen'];
+    return ['/vehiculo', this.vehicleId, 'historial'];
+  }
 
   settlement = signal<Settlement | null>(null);
   loading = signal(true);
@@ -128,11 +135,7 @@ export class SettlementDetailComponent implements OnInit {
         this.deleting.set(false);
         // borramos una carga -> sus viajes/liquidaciones salen del dashboard
         this.vehicleService.invalidate(this.vehicleId);
-        this.router.navigate(
-          this.from === 'carga'
-            ? ['/vehiculo', this.vehicleId, 'carga']
-            : ['/vehiculo', this.vehicleId, 'historial'],
-        );
+        this.router.navigate(this.backRoute());
       },
       error: () => {
         this.deleting.set(false);

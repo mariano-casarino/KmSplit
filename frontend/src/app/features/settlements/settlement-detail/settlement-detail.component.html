@@ -3,7 +3,7 @@
     <button
       class="icon-btn"
       type="button"
-      [routerLink]="from === 'carga' ? ['/vehiculo', vehicleId, 'carga'] : ['/vehiculo', vehicleId, 'historial']"
+      [routerLink]="backRoute()"
       aria-label="Volver"
     >
       ‹

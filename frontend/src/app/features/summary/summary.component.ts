@@ -163,7 +163,9 @@ export class SummaryComponent implements OnInit {
         queryParams: { tripId: record.tripId, returnTo: 'resumen' },
       });
     } else if (record.type === 'fuel' && record.settlementId !== undefined) {
-      this.router.navigate(['/vehiculo', this.vehicleId, 'liquidacion', record.settlementId]);
+      this.router.navigate(['/vehiculo', this.vehicleId, 'liquidacion', record.settlementId], {
+        queryParams: { from: 'resumen' },
+      });
     }
   }
 
