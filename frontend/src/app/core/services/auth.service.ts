@@ -25,8 +25,8 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  /** Refresco compartido: si ya hay uno en vuelo, todos los llamadores
-   *  (interceptor ante varios 401 paralelos, guard, etc.) esperan el mismo.
+  /** Refresco compartido: si ya hay uno en vuelo (petición http que no recibió respuesta),
+      todos los llamadores (interceptor ante varios 401 paralelos, guard, etc.) esperan el mismo.
    *  Evita que la rotación invalide tokens entre sí y cierre la sesión. */
   private refreshRequest: Observable<AccessTokenResponse> | null = null;
 
@@ -91,9 +91,16 @@ export class AuthService {
     if (cached && this.isAuthenticated()) {
       return of(cached);
     }
-    return this.http.get<User>(`${this.baseUrl}/me/`).pipe(
-      tap((user) => this.currentUserSubject.next(user)),
-    );
+    // Comparte la request en vuelo: si varios componentes montan a la vez
+    // (guards, headers, vistas), todos esperan el mismo /auth/me.
+    if (!this.fetchMeRequest) {
+      this.fetchMeRequest = this.http.get<User>(`${this.baseUrl}/me/`).pipe(
+        tap((user) => this.currentUserSubject.next(user)),
+        finalize(() => (this.fetchMeRequest = null)),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    }
+    return this.fetchMeRequest;
   }
 
   /** Obtiene un usuario por ID (usa cache simple para evitar requests repetidos). */
