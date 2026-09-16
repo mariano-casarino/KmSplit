@@ -176,13 +176,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
-    "DEFAULT_THROTTLE_CLASSES": (
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
-    ),
+    # Sin throttle global: cada request pagaba 2 operaciones a Redis (anon +
+    # user). Solo se throttlea login/register (rate limit anti-brute-force),
+    # que se declaran como ScopedRateThrottle en esas vistas.
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/hour",
-        "user": "1000/hour",
         "login": "15/minute",
         "register": "3/hour",
     },
