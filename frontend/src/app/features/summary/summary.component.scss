@@ -64,38 +64,61 @@
 .records-list {
   border: 1px solid var(--gray-300);
   border-radius: var(--radius);
-  padding: 4px 12px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
 }
 
 .record-row {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 0;
+  padding: 11px 0;
   border-bottom: 1px solid var(--gray-100);
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  appearance: none;
+  cursor: default;
 
   &:last-child {
     border-bottom: none;
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--gray-100);
+      margin: 0 -12px;
+      padding: 11px 12px;
+    }
+  }
+
+  &:disabled {
+    opacity: 1;
   }
 }
 
 .record-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  font-size: 13px;
 }
 
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  color: var(--white);
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.record-icon {
+  font-size: 13px;
+}
+
+.edit-hint {
+  font-size: 13px;
+  opacity: 0.6;
 }
 
 .badge {

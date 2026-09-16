@@ -33,15 +33,22 @@
     } @else {
       <div class="records-list">
         @for (record of recentRecords; track record.id) {
-          <div class="record-row">
-            <div class="record-left">
-              <div class="avatar" [style.background]="avatarColor(record.userId)">
-                {{ initials(record.userName) }}
-              </div>
+          <button
+            class="record-row"
+            type="button"
+            [class.clickable]="record.clickable"
+            [disabled]="!record.clickable"
+            (click)="onRecordClick(record)"
+          >
+            <span class="record-left">
+              <span class="badge">{{ record.date | date: 'dd/MM' }}</span>
+              <span class="record-icon">{{ record.type === 'fuel' ? '⛽' : '📍' }}</span>
               <span class="muted">{{ record.userName }} · {{ record.label }}</span>
-            </div>
-            <span class="badge">{{ record.date | date: 'dd/MM' }}</span>
-          </div>
+            </span>
+            @if (record.clickable) {
+              <span class="edit-hint">{{ record.type === 'fuel' ? '👁️' : '✏️' }}</span>
+            }
+          </button>
         }
       </div>
     }

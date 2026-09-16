@@ -162,6 +162,8 @@ export class TripFormComponent implements OnInit {
       this.router.navigate(['/vehiculo', this.vehicleId, 'historial', 'semana']);
     } else if (rt === 'full') {
       this.router.navigate(['/vehiculo', this.vehicleId, 'historial']);
+    } else if (rt === 'resumen') {
+      this.router.navigate(['/vehiculo', this.vehicleId, 'resumen']);
     } else {
       this.router.navigate(['/vehiculo', this.vehicleId]);
     }
