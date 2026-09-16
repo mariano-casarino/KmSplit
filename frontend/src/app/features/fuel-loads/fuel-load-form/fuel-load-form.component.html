@@ -11,8 +11,9 @@
     }
   </div>
 
-  <div class="banner-alert">
-    ⚠️ Recordá ingresar el km completo que muestra el tablero de tu vehículo.
+  <div class="banner-alert banner-reminder">
+    <span class="banner-title">Recordá</span>
+    <span class="banner-text">Ingresá el km completo que muestra el tablero de tu vehículo.</span>
   </div>
 
   @if (editLoading()) {
@@ -54,7 +55,10 @@
     </div>
 
     <div class="banner-alert banner-info">
-      ℹ️ {{ isEdit ? 'Al guardar se actualiza el reparto de esta carga.' : 'Al guardar se calcula el reparto automático desde la última carga.' }}
+      <span class="banner-title">{{ isEdit ? 'Edición de carga' : 'Reparto automático' }}</span>
+      <span class="banner-text">
+        {{ isEdit ? 'Al guardar se actualiza el reparto de esta carga.' : 'Se calcula automáticamente desde la última carga.' }}
+      </span>
     </div>
 
     @if (errorMessage()) {
