@@ -11,8 +11,13 @@
     <p class="field-error">{{ errorMessage() }}</p>
   } @else {
     @if (latestSettlement && latestSettlement.unassigned_km > 0) {
-      <div class="banner-alert">
-        ⚠️ Hay {{ latestSettlement.unassigned_km | argNumber }} km sin asignar en la última liquidación
+      <div class="banner-alert" [class.urgent]="hasUnassignedUrgent">
+        <div class="banner-main">
+          <p class="banner-title">Km sin asignar</p>
+          <p class="banner-text">
+            {{ latestSettlement.unassigned_km | argNumber }} km en la última liquidación
+          </p>
+        </div>
       </div>
     }
 

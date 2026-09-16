@@ -19,27 +19,28 @@
   } @else {
     @if (kmGaps.length > 0) {
       <div class="gaps-section">
-        <p class="gaps-title">⚠️ Km sin registrar ({{ kmGaps.length }})</p>
+        <p class="gaps-title"> Km sin registrar </p>
+        <p class="gaps-summary">{{ gapsSummary }}</p>
         <div class="gaps-list">
           @for (gap of visibleGaps; track gap.id) {
-            <div class="gap-item">
-              <p class="gap-period">{{ gap.periodLabel }}</p>
-              <p class="gap-range">
-                Del km <strong>{{ gap.gapStartKm | argNumber }}</strong> al <strong>{{ gap.gapEndKm | argNumber }}</strong>
-                — {{ gap.gapSize | argNumber }} km sin registrar
-              </p>
-              <p class="gap-context muted">
-                Entre {{ gap.beforeLabel }} y {{ gap.afterLabel }}
-              </p>
-              <button class="btn btn-secondary gap-action" type="button" (click)="onGapClick(gap)">
-                Cargar viaje
+            <div class="gap-item" [class.urgent]="gap.urgent">
+              <div class="gap-main">
+                <p class="gap-range">
+                  <strong>{{ gap.gapStartKm | argNumber }}</strong> → <strong>{{ gap.gapEndKm | argNumber }}</strong> km
+                </p>
+                <p class="gap-context muted">
+                  {{ gap.before }} → {{ gap.after }} · {{ gap.gapSize | argNumber }} km sin registrar
+                </p>
+              </div>
+              <button class="gap-action" type="button" (click)="onGapClick(gap)">
+                + Cargar
               </button>
             </div>
           }
         </div>
         @if (hasMoreGaps) {
-          <button class="btn btn-secondary gaps-toggle" type="button" (click)="toggleAllGaps()">
-            {{ showAllGaps() ? 'Ver menos' : 'Ver más' }}
+          <button class="gap-toggle" type="button" (click)="toggleAllGaps()">
+            {{ showAllGaps() ? 'Ver menos ▴' : 'Ver ' + remainingGaps + ' huecos más ▾' }}
           </button>
         }
       </div>

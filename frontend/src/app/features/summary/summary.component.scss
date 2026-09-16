@@ -1,3 +1,36 @@
+:host {
+  .banner-alert {
+    display: block;
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-left: 4px solid var(--amber);
+    border-radius: var(--radius-sm);
+    color: var(--gray-900);
+    padding: 10px 12px;
+    margin-bottom: 4px;
+
+    &.urgent {
+      border-left-color: var(--red);
+    }
+  }
+}
+
+.banner-main {
+  min-width: 0;
+}
+
+.banner-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--gray-700);
+  margin: 0 0 2px;
+}
+
+.banner-text {
+  font-size: 13px;
+  margin: 0;
+}
+
 .section-title {
   font-size: 12px;
   font-weight: 800;

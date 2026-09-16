@@ -111,8 +111,14 @@
 .gaps-title {
   font-size: 12.5px;
   font-weight: 800;
-  color: #8a5c1a;
-  margin: 0 0 8px;
+  color: var(--gray-700);
+  margin: 0 0 2px;
+}
+
+.gaps-summary {
+  font-size: 11.5px;
+  color: var(--gray-500);
+  margin: 0 0 10px;
 }
 
 .gaps-list {
@@ -122,24 +128,28 @@
 }
 
 .gap-item {
-  background: #fbf1de;
-  border: 1px solid var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-left: 4px solid var(--amber);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+
+  &.urgent {
+    border-left-color: var(--red);
+  }
 }
 
-.gap-period {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #8a5c1a;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin: 0 0 4px;
+.gap-main {
+  min-width: 0;
 }
 
 .gap-range {
   font-size: 13px;
-  color: #6b4711;
+  color: var(--gray-900);
   margin: 0 0 3px;
 
   strong {
@@ -153,16 +163,32 @@
 }
 
 .gap-action {
-  display: block;
-  margin: 10px auto 0;
-  width: fit-content;
-  padding: 8px 14px;
-  font-size: 13px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--blue-100);
+  color: var(--blue-500);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #d3e0fb;
+  }
 }
 
-.gaps-toggle {
-  margin-top: 12px;
-  width: 100%;
-  padding: 10px;
-  font-size: 13px;
+.gap-toggle {
+  display: block;
+  margin: 10px auto 0;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
 }

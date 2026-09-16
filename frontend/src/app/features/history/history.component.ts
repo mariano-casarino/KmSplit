@@ -35,9 +35,14 @@ interface KmGap {
   gapStartKm: number;
   gapEndKm: number;
   gapSize: number;
-  beforeLabel: string;
-  afterLabel: string;
+  before: string;
+  after: string;
+  /** Período viejo sin cerrar: líquido pendiente de pago o abierto hace +14 días. */
+  urgent: boolean;
 }
+
+/** Umbral en días para considerar a un período "atrasado" (acento rojo). */
+const STALE_PERIOD_DAYS = 14;
 
 @Component({
   selector: 'app-history',
@@ -170,7 +175,10 @@ export class HistoryComponent implements OnInit {
       start: number;
       end: number | null;
       settlementId: number | null;
+      urgent: boolean;
     }
+
+    const lastLoad = this.lastFuelLoadDate();
 
     const periods: PeriodDef[] = this.settlements()
       .slice()
@@ -180,6 +188,7 @@ export class HistoryComponent implements OnInit {
         start: s.period_start_km,
         end: s.period_end_km,
         settlementId: s.id,
+        urgent: this.isUrgentPeriod(s.id, lastLoad),
       }));
 
     periods.push({
@@ -187,6 +196,7 @@ export class HistoryComponent implements OnInit {
       start: vehicle.current_km,
       end: null,
       settlementId: null,
+      urgent: this.isUrgentPeriod(null, lastLoad),
     });
 
     const gaps: KmGap[] = [];
@@ -207,7 +217,7 @@ export class HistoryComponent implements OnInit {
         .sort((a, b) => a.start_km - b.start_km);
 
       let cursor = period.start;
-      let lastTripLabel: string | null = null;
+      let lastTripName: string | null = null;
 
       for (const trip of periodTrips) {
         // Recortamos el viaje al rango de ESTE período (igual que el backend
@@ -223,12 +233,13 @@ export class HistoryComponent implements OnInit {
             gapStartKm: cursor,
             gapEndKm: clipStart,
             gapSize: clipStart - cursor,
-            beforeLabel: lastTripLabel ?? 'el inicio del período',
-            afterLabel: `${this.memberName(trip.user)} (arranca en ${formatKm(clipStart)} km)`,
+            before: lastTripName ?? 'el inicio del período',
+            after: this.memberName(trip.user),
+            urgent: period.urgent,
           });
         }
         cursor = Math.max(cursor, clipEnd);
-        lastTripLabel = `${this.memberName(trip.user)} (hasta ${formatKm(clipEnd)} km)`;
+        lastTripName = this.memberName(trip.user);
       }
 
       if (period.end !== null && cursor < period.end) {
@@ -238,24 +249,49 @@ export class HistoryComponent implements OnInit {
           gapStartKm: cursor,
           gapEndKm: period.end,
           gapSize: period.end - cursor,
-          beforeLabel: lastTripLabel ?? 'el inicio del período',
-          afterLabel: 'el cierre de esa liquidación',
+          before: lastTripName ?? 'el inicio del período',
+          after: 'el cierre de esa liquidación',
+          urgent: period.urgent,
         });
       }
     }
 
-    // Orden: primero el km más alto (el más reciente), como en el historial.
+    // Primero el bache más reciente (el de mayor kilometraje, más cerca del
+    // odómetro actual): es el que el conductor ve hoy y el que queda visible
+    // por defecto.
     return gaps.sort((a, b) => b.gapStartKm - a.gapStartKm);
   }
 
-  /** Los huecos visibles: los 3 primeros, o todos si se expandió. */
+  /** Total de km que quedaron sin registrar (suma de todos los huecos). */
+  get gapsTotalKm(): number {
+    return this.kmGaps.reduce((acc, g) => acc + g.gapSize, 0);
+  }
+
+  /** Cantidad de períodos distintos con huecos, para el contador del header. */
+  get gapsPeriodCount(): number {
+    return new Set(this.kmGaps.map((g) => g.periodLabel)).size;
+  }
+
+  /** "X km sin registrar" o "X km sin registrar en N períodos" según cuántos. */
+  get gapsSummary(): string {
+    const base = `${formatKm(this.gapsTotalKm)} km sin registrar`;
+    return this.gapsPeriodCount > 1 ? `${base} en ${this.gapsPeriodCount} períodos` : base;
+  }
+
+  /** Huecos que siguen ocultos detrás del "Ver más". */
+  get remainingGaps(): number {
+    return this.kmGaps.length - this.visibleGaps.length;
+  }
+
+  /** El hueco visible por defecto: uno solo, el más urgente. "Ver más"
+   *  despliega la lista completa en el mismo lugar, sin navegar. */
   get visibleGaps(): KmGap[] {
-    return this.showAllGaps() ? this.kmGaps : this.kmGaps.slice(0, 3);
+    return this.showAllGaps() ? this.kmGaps : this.kmGaps.slice(0, 1);
   }
 
   /** Hay huecos ocultos tras el "ver más"? */
   get hasMoreGaps(): boolean {
-    return this.kmGaps.length > 3;
+    return this.kmGaps.length > 1;
   }
 
   toggleAllGaps(): void {
@@ -293,6 +329,30 @@ export class HistoryComponent implements OnInit {
     const d = new Date();
     d.setDate(d.getDate() - 7);
     return d.toISOString().slice(0, 10);
+  }
+
+  /** Días transcurridos (float) desde una fecha ISO hasta hoy. */
+  private daysSince(iso: string): number {
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) return 0;
+    return (Date.now() - t) / 86_400_000;
+  }
+
+  /** La fecha de la última carga de nafta: marca el nacimiento del período abierto. */
+  private lastFuelLoadDate(): string | null {
+    const dates = this.fuelLoads().map((f) => f.load_date).sort();
+    return dates[dates.length - 1] ?? null;
+  }
+
+  /** Un período está "atrasado" cuando pasa el umbral sin cerrarse:
+   *  el abierto lleva +STALE_PERIOD_DAYS desde la última carga, o una
+   *  liquidación cerrada sigue pendiente de pago hace +STALE_PERIOD_DAYS. */
+  private isUrgentPeriod(settlementId: number | null, lastLoadDate: string | null): boolean {
+    if (settlementId === null) {
+      return lastLoadDate !== null && this.daysSince(lastLoadDate) > STALE_PERIOD_DAYS;
+    }
+    const s = this.settlements().find((x) => x.id === settlementId);
+    return !!s && s.status === 'pendiente' && this.daysSince(s.created_at) > STALE_PERIOD_DAYS;
   }
 
   private formatDate(iso: string): string {

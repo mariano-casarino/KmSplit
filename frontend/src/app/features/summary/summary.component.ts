@@ -82,6 +82,20 @@ export class SummaryComponent implements OnInit {
     return this.settlements()[0] ?? null;
   }
 
+  /** Mismo umbral de "atrasado" que los baches del historial: la alerta
+   *  pasa a rojo solo si la última liquidación sigue pendiente de pago hace
+   *  más de 14 días. */
+  get hasUnassignedUrgent(): boolean {
+    const s = this.latestSettlement;
+    return !!s && s.status === 'pendiente' && this.daysSince(s.created_at) > 14;
+  }
+
+  private daysSince(iso: string): number {
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) return 0;
+    return (Date.now() - t) / 86_400_000;
+  }
+
   get recentRecords(): RecentRecord[] {
     const tripRecords: RecentRecord[] = this.trips().map((t) => ({
       id: `trip-${t.id}`,
