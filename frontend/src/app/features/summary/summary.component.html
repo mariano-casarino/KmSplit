@@ -11,14 +11,20 @@
     <p class="field-error">{{ errorMessage() }}</p>
   } @else {
     @if (latestSettlement && latestSettlement.unassigned_km > 0) {
-      <div class="banner-alert" [class.urgent]="hasUnassignedUrgent">
-        <div class="banner-main">
-          <p class="banner-title">Km sin asignar</p>
-          <p class="banner-text">
+      <button
+        class="banner-alert"
+        type="button"
+        [class.urgent]="hasUnassignedUrgent"
+        [routerLink]="['/vehiculo', vehicleId, 'historial']"
+      >
+        <span class="banner-main">
+          <span class="banner-title">Km sin asignar</span>
+          <span class="banner-text">
             {{ latestSettlement.unassigned_km | argNumber }} km en la última liquidación
-          </p>
-        </div>
-      </div>
+          </span>
+        </span>
+        <span class="banner-hint">›</span>
+      </button>
     }
 
     <div class="section-title">Últimos registros</div>

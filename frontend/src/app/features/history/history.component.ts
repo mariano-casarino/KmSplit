@@ -109,7 +109,7 @@ export class HistoryComponent implements OnInit {
   }
 
   get title(): string {
-    return this.scope === 'week' ? 'Últimos 7 días' : 'Historial completo';
+    return this.scope === 'week' ? 'Últimos 7 días' : 'Historial';
   }
 
   get records(): HistoryRecord[] {
