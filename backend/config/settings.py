@@ -186,10 +186,16 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2), 
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # Firma atada al deploy: Railway inyecta RAILWAY_DEPLOYMENT_ID, único por
+    # cada deploy. Al cambiar la firma, todo JWT emitido antes queda inválido
+    # y TODOS los usuarios deben volver a ingresar tras cada deploy (evita las
+    # sesiones "zombie" que quedan con datos/dashboard cacheados viejos).
+    # En desarrollo (sin esa variable) la firma es estable y la sesión sobrevive.
+    "SIGNING_KEY": f"{config('SECRET_KEY')}:{config('RAILWAY_DEPLOYMENT_ID', default='local')}",
 }
 
 
