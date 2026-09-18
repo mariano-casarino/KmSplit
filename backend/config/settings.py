@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+
 from decouple import config
 from datetime import timedelta
 
@@ -24,7 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'accounts',
-    'core',
+    'core.apps.CoreConfig',
     'rest_framework_simplejwt.token_blacklist',
 ]
 
@@ -238,3 +240,14 @@ if ENVIRONMENT == 'production':
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ============================================================
+# Backup automático a Google Sheets (Apps Script webhook)
+# SHEETS_USER_MAP: JSON que mapea la cuenta al nombre de la hoja:
+#   {"<email>": "Nombre en la hoja"}  (también acepta el id o el nombre)
+#   Ej: {"mariano@gmail.com": "Marian", "juan@x.com": "juan"}
+# ============================================================
+SHEETS_SYNC_ENABLED = config("SHEETS_SYNC_ENABLED", default=False, cast=bool)
+SHEETS_WEBHOOK_URL = config("SHEETS_WEBHOOK_URL", default="")
+SHEETS_WEBHOOK_SECRET = config("SHEETS_WEBHOOK_SECRET", default="")
+SHEETS_USER_MAP = config("SHEETS_USER_MAP", default="{}", cast=lambda v: json.loads(v))
