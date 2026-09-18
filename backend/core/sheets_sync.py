@@ -7,8 +7,9 @@ en las hojas "Registro" y "Resumen semanal". Se configura por env:
     SHEETS_SYNC_ENABLED   (bool, default False)
     SHEETS_WEBHOOK_URL    URL del web app desplegado en Apps Script
     SHEETS_WEBHOOK_SECRET token que el script valida como autenticación
-    SHEETS_USER_MAP       JSON, mapea user_id -> "Nombre en la hoja Registro"
-                          (ya que el nombre en la hoja no es 1:1 con la cuenta)
+    SHEETS_USER_MAP       JSON, mapea cuenta -> "Nombre en la hoja Registro"
+                          (la clave puede ser email, id o nombre)
+    SHEETS_GROUP_NAME     solo se sincroniza este grupo (vacío = todos)
 """
 
 import json
@@ -51,6 +52,17 @@ def week_number(d: date) -> str:
     return f"{iso_year}-{iso_week:02d}"
 
 
+def group_is_synced(vehicle) -> bool:
+    """True si el vehículo pertenece al grupo que se vuelca a la planilla.
+
+    Configurá SHEETS_GROUP_NAME con el nombre exacto (ej "Familia Casarino").
+    Vacío = se vuelcan TODOS los grupos."""
+    target = getattr(settings, "SHEETS_GROUP_NAME", "")
+    if not target:
+        return True
+    return vehicle.group.name.strip().casefold() == target.strip().casefold()
+
+
 def _persona_for(user) -> str:
     """Nombre que se usa en la hoja 'Registro' (columna Persona).
 
@@ -71,6 +83,7 @@ def trip_payload(trip, action: str) -> dict:
         "tipo": "viaje",
         "accion": action,  # 'crear' | 'editar' | 'eliminar'
         "viaje_id": trip.pk,
+        "grupo": trip.vehicle.group.name,
         "vehiculo": trip.vehicle.name,
         "fecha": trip_date.isoformat(),
         "persona": _persona_for(trip.user),
@@ -89,6 +102,7 @@ def fuel_payload(fuel_load, action: str) -> dict:
         "tipo": "carga",
         "accion": action,  # 'crear' | 'editar' | 'eliminar'
         "carga_id": fuel_load.pk,
+        "grupo": fuel_load.vehicle.group.name,
         "vehiculo": fuel_load.vehicle.name,
         "fecha": load_date.isoformat(),
         "odometro": fuel_load.odometer_km,

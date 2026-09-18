@@ -251,3 +251,5 @@ SHEETS_SYNC_ENABLED = config("SHEETS_SYNC_ENABLED", default=False, cast=bool)
 SHEETS_WEBHOOK_URL = config("SHEETS_WEBHOOK_URL", default="")
 SHEETS_WEBHOOK_SECRET = config("SHEETS_WEBHOOK_SECRET", default="")
 SHEETS_USER_MAP = config("SHEETS_USER_MAP", default="{}", cast=lambda v: json.loads(v))
+# Solo se sincroniza este grupo (por nombre exacto). Vacío = todos.
+SHEETS_GROUP_NAME = config("SHEETS_GROUP_NAME", default="")

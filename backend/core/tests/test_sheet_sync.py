@@ -6,6 +6,7 @@ from core.sheets_sync import (
     _persona_for,
     _post,
     fuel_payload,
+    group_is_synced,
     notify_sheets,
     trip_payload,
     week_bounds,
@@ -158,3 +159,51 @@ def test_signal_de_carga_eliminada_dispara_notify(
             fuel.delete()
     mock_notify.assert_called_once()
     assert mock_notify.call_args.args[0]["accion"] == "eliminar"
+
+
+def test_group_is_synced_sin_filtro_acepta_todo(vehicle, settings):
+    settings.SHEETS_GROUP_NAME = ""
+    assert group_is_synced(vehicle) is True
+
+
+def test_group_is_synced_coincide_ignorando_mayusculas(vehicle, settings):
+    settings.SHEETS_GROUP_NAME = "familia TEST"
+    assert group_is_synced(vehicle) is True
+
+
+def test_group_is_synced_otro_grupo(vehicle, settings):
+    settings.SHEETS_GROUP_NAME = "Familia Casarino"
+    assert group_is_synced(vehicle) is False
+
+
+def test_signal_ignora_viaje_de_otro_grupo(
+    vehicle, family, settings, django_capture_on_commit_callbacks
+):
+    settings.SHEETS_GROUP_NAME = "Familia Casarino"
+    with patch("core.signals.notify_sheets") as mock_notify:
+        with django_capture_on_commit_callbacks(execute=True):
+            Trip.objects.create(
+                vehicle=vehicle,
+                user=family["owner"],
+                trip_date=date(2026, 9, 20),
+                start_km=1000,
+                end_km=1100,
+            )
+    mock_notify.assert_not_called()
+
+
+def test_signal_envia_viaje_del_grupo_configurado(
+    vehicle, family, settings, django_capture_on_commit_callbacks
+):
+    settings.SHEETS_GROUP_NAME = "Familia Test"
+    with patch("core.signals.notify_sheets") as mock_notify:
+        with django_capture_on_commit_callbacks(execute=True):
+            Trip.objects.create(
+                vehicle=vehicle,
+                user=family["owner"],
+                trip_date=date(2026, 9, 20),
+                start_km=1000,
+                end_km=1100,
+            )
+    mock_notify.assert_called_once()
+    assert mock_notify.call_args.args[0]["grupo"] == "Familia Test"
