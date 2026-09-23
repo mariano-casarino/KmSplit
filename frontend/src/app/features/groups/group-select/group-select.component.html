@@ -30,14 +30,16 @@
   } @else {
     <div class="group-list">
       @for (group of groups(); track group.id) {
-        <button
+        <div
           class="group-card"
           [class.is-active]="isActive(group)"
-          type="button"
+          [class.selecting]="selectingId() === group.id"
           (click)="selectGroup(group)"
-          [disabled]="selectingId() === group.id"
         >
-          <div class="group-avatar">👥</div>
+          <span class="group-avatar-wrap" (click)="$event.stopPropagation(); openPhotoEditor(group)">
+            <app-avatar [display]="group.name" [photoUrl]="group.avatar_url" size="md" />
+            <span class="group-avatar-edit" aria-hidden="true">📷</span>
+          </span>
           <div class="group-info">
             <p class="group-name">{{ group.name }}</p>
             <p class="muted group-meta">
@@ -50,7 +52,7 @@
           } @else {
             <span class="group-arrow">›</span>
           }
-        </button>
+        </div>
       }
     </div>
 
@@ -60,3 +62,60 @@
     </div>
   }
 </div>
+
+@if (photoEditor(); as group) {
+  <div class="group-photo-overlay" (click)="closePhotoEditor()">
+    <div class="group-photo-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h2>{{ group.name }}</h2>
+      <div class="group-photo-preview">
+        <app-avatar
+          [display]="group.name"
+          [photoUrl]="photoPreview() ?? group.avatar_url"
+          size="xl"
+        />
+      </div>
+
+      <input
+        #photoInput
+        type="file"
+        accept="image/*"
+        class="group-photo-input"
+        (change)="onPhotoSelected($event)"
+        [attr.aria-label]="'Elegir foto del grupo'"
+      />
+
+      @if (photoSaving()) {
+        <p class="muted group-photo-status">Guardando foto...</p>
+      } @else if (photoFeedback(); as feedback) {
+        <p
+          class="group-photo-status"
+          [class.banner-success]="feedback.type === 'success'"
+          [class.banner-error]="feedback.type === 'error'"
+        >
+          {{ feedback.text }}
+        </p>
+      }
+
+      @if (group.avatar_url || photoPreview()) {
+        <button class="btn btn-avatar-action" type="button" (click)="photoInput.click()">
+          Cambiar foto
+        </button>
+        <button
+          class="btn btn-avatar-action btn-avatar-action--danger"
+          type="button"
+          (click)="removeGroupPhoto()"
+        >
+          Eliminar foto
+        </button>
+      } @else {
+        <button class="btn btn-avatar-action" type="button" (click)="photoInput.click()">
+          Agregar foto del grupo
+        </button>
+      }
+
+      <button class="btn btn-secondary" type="button" (click)="closePhotoEditor()">
+        Cerrar
+      </button>
+    </div>
+  </div>
+}

@@ -6,11 +6,15 @@ import { Group } from '../../../core/models/group.model';
 import { User } from '../../../core/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
+import { AvatarComponent } from '../../../shared/avatar/avatar.component';
+import { fileToCompressedDataUri } from '../../../shared/utils/image.util';
+
+type Feedback = { type: 'success' | 'error'; text: string } | null;
 
 @Component({
   selector: 'app-group-select',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AvatarComponent],
   templateUrl: './group-select.component.html',
   styleUrl: './group-select.component.scss',
 })
@@ -26,6 +30,12 @@ export class GroupSelectComponent {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   selectingId = signal<number | null>(null);
+
+  photoEditor = signal<Group | null>(null);
+  photoPreview = signal<string | null>(null);
+  photoSaving = signal(false);
+  photoFeedback = signal<Feedback>(null);
+  private photoTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Usuario reactivo: fetchMe corre en paralelo con la lista de grupos y
    *  puede terminar después (los roles se calculan sobre un signal). */
@@ -118,5 +128,79 @@ export class GroupSelectComponent {
     if (membership.role === 'owner') return 'Owner';
     if (membership.role === 'admin') return 'Admin';
     return 'Member';
+  }
+
+  openPhotoEditor(group: Group): void {
+    this.photoEditor.set(group);
+    this.photoPreview.set(null);
+    this.photoFeedback.set(null);
+    this.clearPhotoTimer();
+  }
+
+  closePhotoEditor(): void {
+    if (this.photoSaving()) return;
+    this.photoEditor.set(null);
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = '';
+
+    this.photoSaving.set(true);
+    this.photoFeedback.set(null);
+    this.clearPhotoTimer();
+
+    fileToCompressedDataUri(file)
+      .then((dataUri) => {
+        this.photoPreview.set(dataUri);
+        this.savePhoto(dataUri);
+      })
+      .catch((err: Error) => {
+        this.photoSaving.set(false);
+        this.photoFeedback.set({ type: 'error', text: err.message });
+      });
+  }
+
+  removeGroupPhoto(): void {
+    this.photoSaving.set(true);
+    this.photoFeedback.set(null);
+    this.clearPhotoTimer();
+    this.photoPreview.set(null);
+    this.savePhoto('');
+  }
+
+  private savePhoto(avatarUrl: string): void {
+    const group = this.photoEditor();
+    if (!group) return;
+
+    this.groupService.updateAvatarUrl(group.id, avatarUrl).subscribe({
+      next: (updated) => {
+        this.groups.update((groups) => groups.map((g) => (g.id === updated.id ? updated : g)));
+        this.photoSaving.set(false);
+        this.photoFeedback.set({
+          type: 'success',
+          text: avatarUrl ? 'Foto del grupo actualizada.' : 'Foto del grupo eliminada.',
+        });
+        // el mensaje de éxito se oculta solo tras 3 segundos
+        this.clearPhotoTimer();
+        this.photoTimer = setTimeout(() => this.photoFeedback.set(null), 3000);
+      },
+      error: (err) => {
+        this.photoSaving.set(false);
+        this.photoFeedback.set({
+          type: 'error',
+          text: err.error?.avatar_url?.[0] ?? 'No pudimos guardar la foto.',
+        });
+      },
+    });
+  }
+
+  private clearPhotoTimer(): void {
+    if (this.photoTimer) {
+      clearTimeout(this.photoTimer);
+      this.photoTimer = null;
+    }
   }
 }

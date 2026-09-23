@@ -15,6 +15,7 @@ const vehiclesUrl = `${environment.apiUrl}/vehicles/`;
 const group = (id: number, name: string) => ({
   id,
   name,
+  avatar_url: '',
   invite_code: `INV${id}`,
   created_by: 1,
   created_at: '2026-01-01T00:00:00Z',

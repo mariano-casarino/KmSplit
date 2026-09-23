@@ -91,4 +91,11 @@ export class GroupService {
       .patch<GroupMembership>(`${this.baseUrl}/${groupId}/members/${userId}/`, data)
       .pipe(tap(() => this.invalidate()));
   }
+
+  /** Cambia la foto del grupo (data URI). Vacío = eliminar foto. */
+  updateAvatarUrl(groupId: number, avatarUrl: string): Observable<Group> {
+    return this.http
+      .patch<Group>(`${this.baseUrl}/${groupId}/`, { avatar_url: avatarUrl })
+      .pipe(tap(() => this.invalidate()));
+  }
 }

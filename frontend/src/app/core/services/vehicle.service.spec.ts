@@ -25,6 +25,7 @@ const dashboard: Dashboard = {
   group: {
     id: 7,
     name: 'Familia',
+    avatar_url: '',
     invite_code: 'ABC123',
     created_by: 1,
     created_at: '2026-01-01T00:00:00Z',

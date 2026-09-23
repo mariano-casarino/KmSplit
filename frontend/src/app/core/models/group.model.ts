@@ -13,6 +13,7 @@ export interface GroupMembership {
 export interface Group {
   id: number;
   name: string;
+  avatar_url: string;
   invite_code: string;
   created_by: number;
   created_at: string;
