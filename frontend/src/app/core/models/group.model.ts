@@ -5,6 +5,7 @@ export interface GroupMembership {
   user: number;
   user_name: string;
   user_email: string;
+  user_avatar: string;
   role: GroupRole;
   is_active: boolean;
   joined_at: string;

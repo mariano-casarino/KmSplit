@@ -173,7 +173,12 @@ export class AuthService {
    *  es de solo lectura en el backend; el usuario cacheado se refresca. */
   updateProfile(payload: ProfileUpdateRequest): Observable<User> {
     return this.http.put<User>(`${this.baseUrl}/me/`, payload).pipe(
-      tap((user) => this.currentUserSubject.next(user)),
+      tap((user) => {
+        this.currentUserSubject.next(user);
+        // la foto/apodo puede haber cambiado: que el perfil de los integrantes
+        // (getUserById) se vuelva a pedir al servidor
+        this.userCache.delete(user.id);
+      }),
     );
   }
 

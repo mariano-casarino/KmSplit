@@ -98,6 +98,7 @@ describe('GroupService (cache en memoria)', () => {
       user: 3,
       user_name: 'Ana',
       user_email: 'ana@mail.com',
+      user_avatar: '',
       group: 7,
       role: 'admin',
       is_active: true,

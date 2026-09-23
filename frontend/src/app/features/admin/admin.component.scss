@@ -165,8 +165,17 @@
   border-radius: var(--radius-sm);
 }
 
+.member-avatar {
+  flex-shrink: 0;
+}
+
 .member-info {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .member-name {
@@ -177,15 +186,25 @@
 
 .member-email {
   font-size: 11px;
-  margin: 2px 0 0;
+  margin: 0;
 }
 
 .member-actions {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .member-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+  }
 }
 
 /* Botones de acciones del integrante: pill con borde, como el resto de la app */

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 
 import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
+import { GroupService } from '../../core/services/group.service';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -24,6 +25,7 @@ export class ProfileComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private groups = inject(GroupService);
 
   user = signal<User | null>(this.auth.getCurrentUser());
   loading = signal(this.user() === null);
@@ -136,6 +138,9 @@ export class ProfileComponent {
           type: 'success',
           text: avatarUrl ? 'Foto de perfil actualizada.' : 'Foto eliminada.',
         });
+        // la foto del integrante vive en el grupo cacheado: refrescalo para que
+        // la lista de integrantes del vehículo muestre la foto nueva al toque
+        this.groups.invalidate();
         // el mensaje de éxito se oculta solo tras 3 segundos
         this.clearAvatarTimer();
         this.avatarTimer = setTimeout(() => this.avatarFeedback.set(null), 3000);
@@ -171,6 +176,8 @@ export class ProfileComponent {
         this.user.set(user);
         this.savingProfile.set(false);
         this.profileFeedback.set({ type: 'success', text: 'Perfil actualizado.' });
+        // el apodo aparece en los grupos cacheados (integrantes, historial)
+        this.groups.invalidate();
       },
       error: (err) => {
         this.savingProfile.set(false);

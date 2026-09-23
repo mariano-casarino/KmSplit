@@ -154,6 +154,12 @@
     <div class="members-list">
       @for (member of activeMembers; track member.id) {
         <div class="member-row" (click)="openMemberProfile(member)">
+          <app-avatar
+            class="member-avatar"
+            [display]="member.user_name"
+            [photoUrl]="member.user_avatar"
+            size="sm"
+          />
           <div class="member-info">
             <span class="member-name">
               {{ member.user_name }}
@@ -162,9 +168,9 @@
               }
             </span>
             <p class="muted member-email">{{ member.user_email }}</p>
+            <span class="role-badge" [class]="'role-' + member.role">{{ roleLabel(member.role) }}</span>
           </div>
           <div class="member-actions">
-            <span class="role-badge" [class]="'role-' + member.role">{{ roleLabel(member.role) }}</span>
             @if (canPromote(member)) {
               <button class="member-btn" type="button" (click)="$event.stopPropagation(); changeRole(member, 'admin')">Promover</button>
             }
