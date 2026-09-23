@@ -11,11 +11,12 @@ import { VehicleService } from '../../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
+import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-settlement-detail',
   standalone: true,
-  imports: [CommonModule, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
+  imports: [CommonModule, BottomNavComponent, ArgNumberPipe, BackButtonComponent, ConfirmDialogComponent],
   templateUrl: './settlement-detail.component.html',
   styleUrl: './settlement-detail.component.scss',
 })
@@ -125,6 +126,13 @@ export class SettlementDetailComponent implements OnInit {
     const settlement = this.settlement();
     if (!settlement) return;
     this.deleteDialog.set(true);
+  }
+
+  /** Mensaje del diálogo (texto plano: el componente compartido no renderiza HTML). */
+  confirmDeleteMessage(): string {
+    const settlement = this.settlement();
+    if (!settlement) return '';
+    return `¿Seguro que querés eliminar la carga que originó esta liquidación del ${settlement.period_start_km} al ${settlement.period_end_km} km?`;
   }
 
   cancelDelete(): void {

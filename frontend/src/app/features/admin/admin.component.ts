@@ -10,13 +10,15 @@ import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
 import { GroupService } from '../../core/services/group.service';
 import { VehicleService } from '../../core/services/vehicle.service';
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, AvatarComponent, BottomNavComponent, BackButtonComponent, ConfirmDialogComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
@@ -294,11 +296,17 @@ loadingProfile = signal(false);
     this.profileMemberUser.set(null);
   }
 
-  /** Iniciales del nombre y apellido (igual que el perfil propio). */
-  memberInitials(profile: User): string {
+  /** Texto del diálogo "Eliminar integrante" (el componente compartido no
+   * renderiza HTML, así que va el mensaje armado como texto plano). */
+  memberRemoveMessage(member: GroupMembership): string {
+    return `¿Estás seguro de eliminar a "${member.user_name}" del Grupo "${this.group()?.name ?? ''}" de manera definitiva?`;
+  }
+
+  /** Apodo para el avatar: nombre real + apellido (o apodo si no hay). */
+  memberProfileDisplay(profile: User): string {
     const source = profile.first_name?.trim() || profile.name?.trim() || '';
     const last = profile.last_name?.trim() ?? '';
-    return ((source[0] ?? '?') + (last[0] ?? '')).toUpperCase().slice(0, 2);
+    return [source, last].filter(Boolean).join(' ').trim();
   }
 
   fullName(profile: User): string {

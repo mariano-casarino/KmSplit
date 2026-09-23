@@ -1,0 +1,12 @@
+@if (photoUrl; as url) {
+  <img class="avatar" [class]="'avatar--' + size" [src]="url" alt="" loading="lazy" />
+} @else {
+  <span
+    class="avatar"
+    [class]="'avatar--' + size"
+    [style.background-color]="color()"
+    aria-hidden="true"
+  >
+    {{ initials() }}
+  </span>
+}

@@ -66,28 +66,17 @@
   }
 
   @if (deleteDialog()) {
-    <div class="dialog-overlay" (click)="cancelDelete()">
-      <div class="confirm-dialog" role="dialog" aria-modal="true">
-        <h2 class="dialog-title">Eliminar carga</h2>
-        <p class="dialog-text">
-          ¿Seguro que querés eliminar la carga que originó esta
-          <strong>liquidación del {{ settlement()!.period_start_km | argNumber }} al
-          {{ settlement()!.period_end_km | argNumber }} km</strong>?
-        </p>
-        <p class="dialog-warning">
-          ⚠️ Solo se puede eliminar la última carga. Al hacerlo, esta liquidación
-          y la referencia de kilómetros van a desaparecer.
-        </p>
-        <div class="dialog-actions">
-          <button class="btn dialog-btn-no" type="button" (click)="cancelDelete()">
-            Cancelar
-          </button>
-          <button class="btn btn-danger" type="button" (click)="doDelete()" [disabled]="deleting()">
-            {{ deleting() ? 'Eliminando...' : 'Sí, eliminar' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-confirm-dialog
+      title="Eliminar carga"
+      [message]="confirmDeleteMessage()"
+      warning="Solo se puede eliminar la última carga. Al hacerlo, esta liquidación y la referencia de kilómetros van a desaparecer."
+      confirmLabel="Sí, eliminar"
+      cancelLabel="Cancelar"
+      variant="danger"
+      [busy]="deleting()"
+      (confirmed)="doDelete()"
+      (cancelled)="cancelDelete()"
+    />
   }
 
   <app-bottom-nav [vehicleId]="vehicleId" />

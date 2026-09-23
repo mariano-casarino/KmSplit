@@ -1,0 +1,44 @@
+.avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-weight: 800;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+img.avatar {
+  object-fit: cover;
+  display: block;
+}
+
+:host {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.avatar--sm {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+.avatar--md {
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+}
+
+.avatar--lg {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+}
+
+.avatar--xl {
+  width: 96px;
+  height: 96px;
+  font-size: 34px;
+}

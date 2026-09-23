@@ -175,6 +175,31 @@ input[type='date'] {
   }
 }
 
+/* Botón pill de editar foto (avatar de perfil y foto del grupo) */
+.btn-avatar-action {
+  width: auto;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--blue-500);
+  border: 1.5px solid var(--blue-500);
+  font-size: 13px;
+
+  &:hover:not(:disabled) {
+    background: var(--blue-100);
+  }
+
+  &--danger {
+    color: var(--gray-500);
+    border-color: var(--gray-300);
+
+    &:hover:not(:disabled) {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+  }
+}
+
 /* Links */
 .link {
   color: var(--blue-500);

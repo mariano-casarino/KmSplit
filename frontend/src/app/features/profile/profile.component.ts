@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 
 import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { DangerButtonComponent } from '../../shared/danger-button/danger-button.component';
@@ -15,7 +16,7 @@ type Feedback = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, ConfirmDialogComponent, DangerButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, AvatarComponent, BackButtonComponent, ConfirmDialogComponent, DangerButtonComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -87,13 +88,13 @@ export class ProfileComponent {
     });
   }
 
-  /** Iniciales del nombre y apellido que se muestran cuando no hay foto. */
-  initials(): string {
+  /** Apodo que se muestra en el avatar: nombre real + apellido (o apodo si no hay). */
+  displayAvatar(): string {
     const user = this.user();
-    if (!user) return '?';
+    if (!user) return '';
     const source = user.first_name?.trim() || user.name?.trim() || '';
     const last = user.last_name?.trim() ?? '';
-    return ((source[0] ?? '?') + (last[0] ?? '')).toUpperCase().slice(0, 2);
+    return [source, last].filter(Boolean).join(' ').trim();
   }
 
   onFileSelected(event: Event): void {

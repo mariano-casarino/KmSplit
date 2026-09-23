@@ -184,56 +184,35 @@
 </div>
 
 @if (confirmDialog()) {
-  <div class="dialog-overlay" (click)="cancelSaveVehicle()">
-    <div class="confirm-dialog" role="dialog" aria-modal="true">
-      <h2 class="dialog-title">Guardar cambios</h2>
-      @if (kmWarning()) {
-        <p class="dialog-warning">
-          ⚠️ Cambiaste el kilometraje actual. Los km registrados que no se hayan
-          liquidado/facturado antes de
-          <strong>{{ form.get('current_km')?.value }}</strong> km no van a ser
-          tenidos en cuenta en la próxima liquidación.
-        </p>
-      }
-      <p class="dialog-text">¿Confirmás guardar estos cambios?</p>
-      <div class="dialog-actions">
-        <button class="btn dialog-btn-no" type="button" (click)="cancelSaveVehicle()">
-          No
-        </button>
-        <button class="btn btn-confirm" type="button" (click)="confirmSaveVehicle()">
-          Sí, guardar
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-confirm-dialog
+    title="Guardar cambios"
+    message="¿Confirmás guardar estos cambios?"
+    [warning]="kmWarning() ? '⚠️ Cambiaste el kilometraje actual. Los km registrados que no se hayan liquidado/facturado antes de ' + (form.get('current_km')?.value ?? '') + ' km no van a ser tenidos en cuenta en la próxima liquidación.' : null"
+    confirmLabel="Sí, guardar"
+    cancelLabel="No"
+    variant="confirm"
+    (confirmed)="confirmSaveVehicle()"
+    (cancelled)="cancelSaveVehicle()"
+  />
 }
 
-@if (removeDialog()) {
-  <div class="dialog-overlay" (click)="cancelRemoveMember()">
-    <div class="confirm-dialog" role="dialog" aria-modal="true">
-      <h2 class="dialog-title">Eliminar integrante</h2>
-      <p class="dialog-text">
-        ¿Estás seguro de eliminar a
-        <strong>&quot;{{ memberToRemove()!.user_name }}&quot;</strong> del Grupo
-        <strong>&quot;{{ group()!.name }}&quot;</strong> de manera definitiva?
-      </p>
-      <p class="dialog-warning">Esta acción no se puede deshacer.</p>
-      <div class="dialog-actions">
-        <button class="btn dialog-btn-no" type="button" (click)="cancelRemoveMember()">
-          Cancelar
-        </button>
-        <button class="btn btn-danger" type="button" (click)="confirmRemoveMember()">
-          Sí, eliminar
-        </button>
-      </div>
-    </div>
-  </div>
+@if (removeDialog() && memberToRemove(); as member) {
+  <app-confirm-dialog
+    title="Eliminar integrante"
+    [message]="memberRemoveMessage(member)"
+    warning="Esta acción no se puede deshacer."
+    confirmLabel="Sí, eliminar"
+    cancelLabel="Cancelar"
+    variant="danger"
+    (confirmed)="confirmRemoveMember()"
+    (cancelled)="cancelRemoveMember()"
+  />
 }
 
 @if (profileMember(); as member) {
-  <div class="dialog-overlay" (click)="closeMemberProfile()">
+  <div class="member-profile-overlay" (click)="closeMemberProfile()">
     <div
-      class="confirm-dialog member-profile-card"
+      class="member-profile-card"
       role="dialog"
       aria-modal="true"
       (click)="$event.stopPropagation()"
@@ -242,11 +221,11 @@
         <p class="muted">Cargando...</p>
       } @else if (profileMemberUser(); as profile) {
         <div class="member-profile-avatar">
-          @if (profile.avatar_url) {
-            <img [src]="profile.avatar_url" alt="Foto de perfil" />
-          } @else {
-            {{ memberInitials(profile) }}
-          }
+          <app-avatar
+            [display]="memberProfileDisplay(profile)"
+            [photoUrl]="profile.avatar_url"
+            size="lg"
+          />
         </div>
         <h2 class="dialog-title member-profile-name">{{ profile.name }}</h2>
         @if (fullName(profile)) {
@@ -262,7 +241,7 @@
         <p class="muted member-profile-joined">
           Integrante desde el {{ joinedLabel(member.joined_at) }}
         </p>
-        <button class="btn btn-confirm" type="button" (click)="closeMemberProfile()">
+        <button class="btn btn-success" type="button" (click)="closeMemberProfile()">
           Cerrar
         </button>
       } @else {
