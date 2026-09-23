@@ -17,6 +17,9 @@ class Group(models.Model):
     """
 
     name = models.CharField(max_length=150)
+    # Foto del grupo como data URI (base64), igual que el avatar del usuario y
+    # la foto del vehículo. Vacío = sin foto: la app muestra las iniciales+color.
+    avatar_url = models.TextField(blank=True, default="")
     invite_code = models.CharField(max_length=12, unique=True, default=generate_invite_code)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="groups_created"

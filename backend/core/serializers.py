@@ -27,8 +27,13 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ["id", "name", "invite_code", "created_by", "created_at", "members"]
+        fields = ["id", "name", "avatar_url", "invite_code", "created_by", "created_at", "members"]
         read_only_fields = ["id", "invite_code", "created_by", "created_at"]
+
+    def validate_avatar_url(self, value):
+        """Foto del grupo como data URI (base64). Vacío = sin foto. Misma
+        validación que el avatar del usuario y la foto del vehículo."""
+        return validate_image_data_uri(value)
 
     def create(self, validated_data):
         user = self.context["request"].user
