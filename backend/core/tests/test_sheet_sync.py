@@ -129,8 +129,10 @@ def test_post_traga_errores_de_red():
 
 
 def test_signal_de_viaje_dispara_notify(
-    vehicle, family, django_capture_on_commit_callbacks
+    vehicle, family, django_capture_on_commit_callbacks, settings
 ):
+    # fijo el filtro de grupo para no depender de SHEETS_GROUP_NAME del .env
+    settings.SHEETS_GROUP_NAME = "Familia Test"
     with patch("core.signals.notify_sheets") as mock_notify:
         with django_capture_on_commit_callbacks(execute=True):
             Trip.objects.create(
@@ -145,8 +147,10 @@ def test_signal_de_viaje_dispara_notify(
 
 
 def test_signal_de_carga_eliminada_dispara_notify(
-    vehicle, family, django_capture_on_commit_callbacks
+    vehicle, family, django_capture_on_commit_callbacks, settings
 ):
+    # fijo el filtro de grupo para no depender de SHEETS_GROUP_NAME del .env
+    settings.SHEETS_GROUP_NAME = "Familia Test"
     fuel = FuelLoad.objects.create(
         vehicle=vehicle,
         loaded_by=family["owner"],

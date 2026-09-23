@@ -20,7 +20,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.mail import send_brevo_email
 from .models import PasswordReset, User
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import (
+    ChangePasswordSerializer,
+    ProfileUpdateSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_SECONDS = 15 * 60  # 15 minutos
@@ -256,12 +261,41 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
-    """GET /api/auth/me/ — perfil del usuario logueado (según el token)."""
+    """GET/PUT /api/auth/me/ — perfil del usuario logueado (según el token).
+    GET lo devuelve; PUT edita apodo (name) y apellido (last_name). El email
+    es de solo lectura."""
 
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    def put(self, request):
+        serializer = ProfileUpdateSerializer(
+            request.user,
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
+
+
+class ChangePasswordView(APIView):
+    """POST /api/auth/change-password/ — cambia la contraseña del usuario
+    logueado. Requiere la contraseña actual y valida la nueva."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"user": request.user},
+        )
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password"])
+        return Response({"detail": "Contraseña actualizada."})
 
 
 class UserDetailView(APIView):
