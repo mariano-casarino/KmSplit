@@ -104,6 +104,7 @@ def fuel_payload(fuel_load, action: str) -> dict:
         "carga_id": fuel_load.pk,
         "grupo": fuel_load.vehicle.group.name,
         "vehiculo": fuel_load.vehicle.name,
+        "persona": _persona_for(fuel_load.loaded_by),
         "fecha": load_date.isoformat(),
         "odometro": fuel_load.odometer_km,
         # str para no perder decimales en el JSON (Decimal no es serializable)

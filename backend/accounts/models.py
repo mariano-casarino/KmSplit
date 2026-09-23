@@ -34,8 +34,10 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    # "name" funciona como apodo / nombre para mostrar de la app.
+    # "name" es el apodo: el nombre para mostrar que se usa en toda la app y
+    # en las planillas. first_name/last_name son el nombre real, opcional.
     name = models.CharField(max_length=150)
+    first_name = models.CharField(max_length=150, blank=True, default="")
     last_name = models.CharField(max_length=150, blank=True, default="")
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)

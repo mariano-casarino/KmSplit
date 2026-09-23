@@ -29,17 +29,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "last_name", "email", "created_at"]
+        fields = ["id", "name", "first_name", "last_name", "email", "created_at"]
         read_only_fields = fields
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    """PUT /api/auth/me/ — el usuario edita su perfil (apodo + apellido).
+    """PUT /api/auth/me/ — el usuario edita su perfil (apodo + nombre + apellido).
     El email es el identificador de la cuenta: solo lectura por ahora."""
 
     class Meta:
         model = User
-        fields = ["id", "name", "last_name", "email"]
+        fields = ["id", "name", "first_name", "last_name", "email"]
         read_only_fields = ["id", "email"]
 
 

@@ -26,6 +26,7 @@ class TestMeProfile:
         assert response.status_code == 200
         assert response.data["email"] == test_user.email
         assert response.data["name"] == "Mariano"
+        assert response.data["first_name"] == ""
         assert response.data["last_name"] == ""
 
     def test_me_update_name_and_last_name_ignores_email(self, test_user, authed_client):
@@ -33,6 +34,7 @@ class TestMeProfile:
             "/api/auth/me/",
             {
                 "name": "Mari",
+                "first_name": "María",
                 "last_name": "Barrios",
                 "email": "otro@invalido.com",
             },
@@ -42,6 +44,7 @@ class TestMeProfile:
 
         test_user.refresh_from_db()
         assert test_user.name == "Mari"
+        assert test_user.first_name == "María"
         assert test_user.last_name == "Barrios"
         # el email identifica la cuenta: no se puede cambiar desde el perfil
         assert test_user.email == "mariano@test.com"
