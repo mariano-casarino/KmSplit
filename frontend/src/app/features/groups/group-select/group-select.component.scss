@@ -76,18 +76,24 @@
 
 .group-avatar-edit {
   position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 20px;
-  height: 20px;
+  right: -4px;
+  bottom: -4px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--blue-500);
-  color: var(--white);
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-500);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  box-shadow: 0 1px 4px rgba(18, 35, 61, 0.3);
+  box-shadow: 0 1px 2px rgba(18, 35, 61, 0.18);
+
+  svg {
+    width: 10px;
+    height: 10px;
+    display: block;
+  }
 }
 
 .group-info {
