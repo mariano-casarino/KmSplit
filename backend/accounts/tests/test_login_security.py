@@ -83,11 +83,18 @@ class TestPasswordValidation:
         client = APIClient()
         response = client.post(
             "/api/auth/register/",
-            {"name": "Pepe", "last_name": "Gómez", "email": "pepe@test.com", "password": "Xk9$mQ2vRp8Lw"},
+            {
+                "name": "Pepe",
+                "first_name": "José",
+                "last_name": "Gómez",
+                "email": "pepe@test.com",
+                "password": "Xk9$mQ2vRp8Lw",
+            },
             format="json",
         )
         assert response.status_code == 201
         assert response.data["name"] == "Pepe"
+        assert response.data["first_name"] == "José"
         assert response.data["last_name"] == "Gómez"
 
 class TestCookieBasedRefresh:

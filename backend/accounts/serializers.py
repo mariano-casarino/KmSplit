@@ -12,7 +12,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "name", "last_name", "email", "password"]
+        fields = ["id", "name", "first_name", "last_name", "email", "password"]
 
     def validate_password(self, value):
         # Django trae validadores por default (largo mínimo, no ser una
