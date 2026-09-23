@@ -63,17 +63,18 @@
   }
 
   &--danger {
-    color: var(--red);
-    border-color: var(--red);
+    color: var(--gray-500);
+    border-color: var(--gray-300);
 
     &:hover:not(:disabled) {
-      background: #fdecec;
+      background: var(--gray-100);
+      color: var(--gray-700);
     }
   }
 }
 
 .avatar-status {
-  font-size: 12px;
+  font-size: 12.5px;
   margin: 0;
 }
 

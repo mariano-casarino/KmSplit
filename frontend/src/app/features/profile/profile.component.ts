@@ -31,7 +31,7 @@ export class ProfileComponent {
   profileFeedback = signal<Feedback>(null);
 
   avatarSaving = signal(false);
-  avatarMessage = signal<string | null>(null);
+  avatarFeedback = signal<Feedback>(null);
 
   savingPassword = signal(false);
   passwordFeedback = signal<Feedback>(null);
@@ -103,19 +103,19 @@ export class ProfileComponent {
     input.value = '';
 
     this.avatarSaving.set(true);
-    this.avatarMessage.set(null);
+    this.avatarFeedback.set(null);
 
     fileToCompressedDataUri(file)
       .then((dataUri) => this.saveAvatar(dataUri))
       .catch((err: Error) => {
         this.avatarSaving.set(false);
-        this.avatarMessage.set(err.message);
+        this.avatarFeedback.set({ type: 'error', text: err.message });
       });
   }
 
   removeAvatar(): void {
     this.avatarSaving.set(true);
-    this.avatarMessage.set(null);
+    this.avatarFeedback.set(null);
     this.saveAvatar('');
   }
 
@@ -128,11 +128,17 @@ export class ProfileComponent {
       next: (updated) => {
         this.user.set(updated);
         this.avatarSaving.set(false);
-        this.avatarMessage.set(avatarUrl ? 'Foto de perfil actualizada.' : 'Foto eliminada.');
+        this.avatarFeedback.set({
+          type: 'success',
+          text: avatarUrl ? 'Foto de perfil actualizada.' : 'Foto eliminada.',
+        });
       },
       error: (err) => {
         this.avatarSaving.set(false);
-        this.avatarMessage.set(err.error?.avatar_url?.[0] ?? 'No pudimos guardar la foto.');
+        this.avatarFeedback.set({
+          type: 'error',
+          text: err.error?.avatar_url?.[0] ?? 'No pudimos guardar la foto.',
+        });
       },
     });
   }

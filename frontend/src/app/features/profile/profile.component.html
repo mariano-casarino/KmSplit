@@ -37,8 +37,14 @@
 
       @if (avatarSaving()) {
         <p class="muted avatar-status">Guardando foto...</p>
-      } @else if (avatarMessage()) {
-        <p class="avatar-status field-error">{{ avatarMessage() }}</p>
+      } @else if (avatarFeedback(); as feedback) {
+        <p
+          class="avatar-status"
+          [class.banner-success]="feedback.type === 'success'"
+          [class.banner-error]="feedback.type === 'error'"
+        >
+          {{ feedback.text }}
+        </p>
       }
     </div>
     <p class="muted profile-email">{{ user.email }}</p>
