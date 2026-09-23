@@ -59,7 +59,11 @@ class TestPasswordValidation:
         client = APIClient()
         response = client.post(
             "/api/auth/register/",
-            {"name": "Test", "email": "weakpass@test.com", "password": "password123"},
+            {
+                "first_name": "Test",
+                "email": "weakpass@test.com",
+                "password": "password123",
+            },
         )
         assert response.status_code == 400
 
@@ -67,7 +71,11 @@ class TestPasswordValidation:
         client = APIClient()
         response = client.post(
             "/api/auth/register/",
-            {"name": "Test", "email": "numericpass@test.com", "password": "12345678"},
+            {
+                "first_name": "Test",
+                "email": "numericpass@test.com",
+                "password": "12345678",
+            },
         )
         assert response.status_code == 400
 
@@ -75,7 +83,11 @@ class TestPasswordValidation:
         client = APIClient()
         response = client.post(
             "/api/auth/register/",
-            {"name": "Test", "email": "strongpass@test.com", "password": "Xk9$mQ2vRp8Lw"},
+            {
+                "first_name": "Test",
+                "email": "strongpass@test.com",
+                "password": "Xk9$mQ2vRp8Lw",
+            },
         )
         assert response.status_code == 201
 
@@ -96,6 +108,35 @@ class TestPasswordValidation:
         assert response.data["name"] == "Pepe"
         assert response.data["first_name"] == "José"
         assert response.data["last_name"] == "Gómez"
+
+    def test_register_without_nickname_uses_real_name(self):
+        client = APIClient()
+        response = client.post(
+            "/api/auth/register/",
+            {
+                "first_name": "Mariana",
+                "last_name": "López",
+                "email": "mariana@test.com",
+                "password": "Xk9$mQ2vRp8Lw",
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "Mariana"
+        assert response.data["first_name"] == "Mariana"
+
+    def test_register_requires_a_real_name(self):
+        client = APIClient()
+        response = client.post(
+            "/api/auth/register/",
+            {
+                "name": "Apodo",
+                "email": "noname@test.com",
+                "password": "Xk9$mQ2vRp8Lw",
+            },
+            format="json",
+        )
+        assert response.status_code == 400
 
 class TestCookieBasedRefresh:
     def test_login_sets_httponly_refresh_cookie_and_also_returns_it_in_body(self, test_user):

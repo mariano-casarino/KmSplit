@@ -8,7 +8,12 @@ from .models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """Registro: el nombre real (first_name) es obligatorio y el apodo (name)
+    opcional. Si no se manda apodo, se usa el nombre real como apodo para que
+    la app/planillas siempre tengan un nombre para mostrar."""
+
     password = serializers.CharField(write_only=True)
+    name = serializers.CharField(required=False, allow_blank=True, max_length=150)
 
     class Meta:
         model = User
@@ -23,6 +28,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(list(exc.messages))
         return value
+
+    def validate(self, attrs):
+        first_name = (attrs.get("first_name") or "").strip()
+        if not first_name:
+            raise serializers.ValidationError(
+                {"first_name": "El nombre real es obligatorio."}
+            )
+        # apodo opcional: si no va, usamos el nombre real
+        name = (attrs.get("name") or "").strip()
+        attrs["name"] = name or first_name
+        return attrs
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
