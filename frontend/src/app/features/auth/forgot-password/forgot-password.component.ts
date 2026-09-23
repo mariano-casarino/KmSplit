@@ -6,9 +6,10 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 type ResetStep = 'email' | 'code' | 'password' | 'done';
 
@@ -23,7 +24,7 @@ function passwordsMatchValidator(): ValidatorFn {
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss',
 })

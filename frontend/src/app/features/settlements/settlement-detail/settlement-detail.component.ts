@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { Settlement, SettlementStatus } from '../../../core/models/settlement.model';
@@ -10,11 +10,12 @@ import { SettlementService } from '../../../core/services/settlement.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-settlement-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, BottomNavComponent, ArgNumberPipe],
+  imports: [CommonModule, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './settlement-detail.component.html',
   styleUrl: './settlement-detail.component.scss',
 })

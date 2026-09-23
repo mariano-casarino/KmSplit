@@ -5,11 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
 import { GroupService } from '../../../core/services/group.service';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-group-join',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
   templateUrl: './group-join.component.html',
   styleUrl: './group-join.component.scss',
 })

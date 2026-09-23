@@ -12,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { VehicleService } from '../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../shared/pipes/arg-number.pipe';
+import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { formatKm, formatMoney } from '../../core/utils/format-args';
 
 type PeriodKey = 'semana' | 'mes' | '3meses';
@@ -31,7 +32,7 @@ interface RecentRecord {
 @Component({
   selector: 'app-summary',
   standalone: true,
-  imports: [CommonModule, RouterLink, BottomNavComponent, ArgNumberPipe],
+  imports: [CommonModule, RouterLink, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './summary.component.html',
   styleUrl: './summary.component.scss',
 })

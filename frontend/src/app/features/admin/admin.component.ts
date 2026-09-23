@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { Group, GroupMembership, GroupRole } from '../../core/models/group.model';
@@ -10,11 +10,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { GroupService } from '../../core/services/group.service';
 import { VehicleService } from '../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
+import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, BottomNavComponent],
+  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, BackButtonComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })

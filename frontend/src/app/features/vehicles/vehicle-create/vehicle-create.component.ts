@@ -7,11 +7,12 @@ import { Group } from '../../../core/models/group.model';
 import { FuelType } from '../../../core/models/vehicle.model';
 import { GroupService } from '../../../core/services/group.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-vehicle-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, BackButtonComponent],
   templateUrl: './vehicle-create.component.html',
   styleUrl: './vehicle-create.component.scss',
 })

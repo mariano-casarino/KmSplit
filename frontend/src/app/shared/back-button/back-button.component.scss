@@ -1,0 +1,26 @@
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--blue-500);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--blue-100);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
+a.back-btn {
+  text-decoration: none;
+}

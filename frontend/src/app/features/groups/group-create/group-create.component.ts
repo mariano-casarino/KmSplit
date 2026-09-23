@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
 import { GroupService } from '../../../core/services/group.service';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-group-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
   templateUrl: './group-create.component.html',
   styleUrl: './group-create.component.scss',
 })

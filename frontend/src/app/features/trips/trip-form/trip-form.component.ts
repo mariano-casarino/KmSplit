@@ -10,6 +10,7 @@ import { TripService } from '../../../core/services/trip.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 /**
  * Generaliza el atajo de "últimos N dígitos" a 1, 2 o 3 dígitos. La cantidad
@@ -30,7 +31,7 @@ function calcularKmFinal(kmReferencia: number, digitos: string): number {
 @Component({
   selector: 'app-trip-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, ArgNumberPipe],
+  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './trip-form.component.html',
   styleUrl: './trip-form.component.scss',
 })

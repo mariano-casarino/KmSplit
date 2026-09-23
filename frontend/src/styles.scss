@@ -235,9 +235,9 @@ input[type='date'] {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   background: var(--gray-100);
   border: none;
   font-size: 16px;
@@ -246,10 +246,20 @@ input[type='date'] {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--blue-100);
+    color: var(--blue-500);
+  }
+
+  svg {
+    display: block;
+  }
 }
 
 .icon-btn-spacer {
-  width: 32px;
+  width: 40px;
 }
 
 .muted {

@@ -1,13 +1,6 @@
 <div class="screen">
   <div class="screen-header">
-    <button
-      class="icon-btn"
-      type="button"
-      [routerLink]="['/vehiculo', vehicleId, 'resumen']"
-      aria-label="Volver"
-    >
-      ‹
-    </button>
+    <app-back-button [link]="['/vehiculo', vehicleId, 'resumen']" />
     <h1>{{ title }}</h1>
     <span class="icon-btn-spacer"></span>
   </div>

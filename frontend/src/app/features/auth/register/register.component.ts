@@ -10,6 +10,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 function passwordsMatchValidator(): ValidatorFn {
   return (group: AbstractControl) => {
@@ -22,7 +23,7 @@ function passwordsMatchValidator(): ValidatorFn {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, BackButtonComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })

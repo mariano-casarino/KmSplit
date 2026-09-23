@@ -1,11 +1,11 @@
 <div class="screen">
   <div class="screen-header">
     @if (isEdit) {
-      <button class="icon-btn" type="button" (click)="cancelEdit()" aria-label="Volver">‹</button>
+      <app-back-button (tap)="cancelEdit()" />
       <h1>Editar carga</h1>
       <span class="icon-btn-spacer"></span>
     } @else {
-      <button class="icon-btn" type="button" [routerLink]="['/vehiculo', vehicleId]" aria-label="Volver">‹</button>
+      <app-back-button [link]="['/vehiculo', vehicleId]" />
       <h1>Registrar carga</h1>
       <span class="icon-btn-spacer"></span>
     }

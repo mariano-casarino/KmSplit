@@ -1,6 +1,6 @@
 <div class="screen">
   <div class="screen-header">
-    <button class="icon-btn" type="button" (click)="goBack()" aria-label="Volver">‹</button>
+    <app-back-button (tap)="goBack()" />
     <h1>{{ editingTripId() ? 'Editar viaje' : 'Registrar viaje' }}</h1>
     <span class="icon-btn-spacer"></span>
   </div>
