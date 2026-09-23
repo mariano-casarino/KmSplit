@@ -153,26 +153,26 @@
     }
     <div class="members-list">
       @for (member of activeMembers; track member.id) {
-        <div class="member-row">
-          <div>
-            <button class="member-name-btn" type="button" (click)="openMemberProfile(member)">
+        <div class="member-row" (click)="openMemberProfile(member)">
+          <div class="member-info">
+            <span class="member-name">
               {{ member.user_name }}
               @if (member.user === currentUserId) {
                 <span class="muted">(vos)</span>
               }
-            </button>
+            </span>
             <p class="muted member-email">{{ member.user_email }}</p>
           </div>
           <div class="member-actions">
             <span class="role-badge" [class]="'role-' + member.role">{{ roleLabel(member.role) }}</span>
             @if (canPromote(member)) {
-              <button class="link" type="button" (click)="changeRole(member, 'admin')">Promover</button>
+              <button class="member-btn" type="button" (click)="$event.stopPropagation(); changeRole(member, 'admin')">Promover</button>
             }
             @if (canDemote(member)) {
-              <button class="link" type="button" (click)="changeRole(member, 'member')">Quitar admin</button>
+              <button class="member-btn" type="button" (click)="$event.stopPropagation(); changeRole(member, 'member')">Quitar admin</button>
             }
             @if (canRemove(member)) {
-              <button class="link link-danger" type="button" (click)="removeMember(member)">Eliminar</button>
+              <button class="member-btn member-btn--danger" type="button" (click)="$event.stopPropagation(); removeMember(member)">Eliminar</button>
             }
           </div>
         </div>
@@ -241,7 +241,13 @@
       @if (loadingProfile()) {
         <p class="muted">Cargando...</p>
       } @else if (profileMemberUser(); as profile) {
-        <div class="member-profile-avatar">{{ memberInitials(profile) }}</div>
+        <div class="member-profile-avatar">
+          @if (profile.avatar_url) {
+            <img [src]="profile.avatar_url" alt="Foto de perfil" />
+          } @else {
+            {{ memberInitials(profile) }}
+          }
+        </div>
         <h2 class="dialog-title member-profile-name">{{ profile.name }}</h2>
         @if (fullName(profile)) {
           <p class="muted member-profile-real">{{ fullName(profile) }}</p>

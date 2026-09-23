@@ -40,6 +40,8 @@ export class RegisterComponent {
   form = this.fb.nonNullable.group(
     {
       name: ['', Validators.required],
+      first_name: ['', Validators.required],
+      last_name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
@@ -56,9 +58,9 @@ export class RegisterComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    const { name, email, password } = this.form.getRawValue();
+    const { name, first_name, last_name, email, password } = this.form.getRawValue();
 
-    this.auth.register({ name, email, password }).subscribe({
+    this.auth.register({ name, first_name, last_name, email, password }).subscribe({
       next: () => {
         // el registro no devuelve tokens -> logueamos directo para no
         // pedirle el password una segunda vez

@@ -16,6 +16,7 @@ const user: User = {
   name: 'Ana',
   first_name: '',
   last_name: '',
+  avatar_url: '',
   email: 'ana@mail.com',
   created_at: '2026-01-01T00:00:00Z',
 };

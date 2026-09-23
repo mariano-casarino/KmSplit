@@ -8,8 +8,38 @@
   @if (loading()) {
     <p class="muted">Cargando...</p>
   } @else if (user(); as user) {
-    <div class="profile-avatar">
-      <span>{{ initials() }}</span>
+    <div class="profile-photo">
+      <label class="profile-avatar" [class.has-avatar]="!!user.avatar_url">
+        @if (user.avatar_url) {
+          <img [src]="user.avatar_url" alt="Foto de perfil" />
+        } @else {
+          <span>{{ initials() }}</span>
+        }
+        <input
+          #avatarInput
+          type="file"
+          accept="image/*"
+          class="avatar-input"
+          (change)="onFileSelected($event)"
+          [attr.aria-label]="'Elegir foto de perfil'"
+        />
+      </label>
+
+      @if (user.avatar_url) {
+        <button class="btn btn-avatar-action btn-avatar-action--danger" type="button" (click)="removeAvatar()">
+          Eliminar foto
+        </button>
+      } @else {
+        <button class="btn btn-avatar-action" type="button" (click)="avatarInput.click()">
+          Agregar foto de perfil
+        </button>
+      }
+
+      @if (avatarSaving()) {
+        <p class="muted avatar-status">Guardando foto...</p>
+      } @else if (avatarMessage()) {
+        <p class="avatar-status field-error">{{ avatarMessage() }}</p>
+      }
     </div>
     <p class="muted profile-email">{{ user.email }}</p>
 

@@ -6,10 +6,25 @@
   </div>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+    
     <div>
-      <input class="field" type="text" formControlName="name" placeholder="Nombre" />
-      @if (form.controls.name.invalid && form.controls.name.touched) {
+      <input class="field" type="text" formControlName="first_name" placeholder="Nombre" />
+      @if (form.controls.first_name.invalid && form.controls.first_name.touched) {
         <p class="field-error">Ingresá tu nombre.</p>
+      }
+    </div>
+    
+    <div>
+      <input class="field" type="text" formControlName="last_name" placeholder="Apellido" />
+      @if (form.controls.last_name.invalid && form.controls.last_name.touched) {
+        <p class="field-error">Ingresá tu apellido.</p>
+      }
+    </div>
+    
+    <div>
+      <input class="field" type="text" formControlName="name" placeholder="Apodo" />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <p class="field-error">Ingresá un apodo.</p>
       }
     </div>
 

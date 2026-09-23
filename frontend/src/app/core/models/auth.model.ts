@@ -6,7 +6,10 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
+  /** Apodo: el nombre que se muestra en toda la app. */
   name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   password: string;
 }
@@ -17,6 +20,8 @@ export interface ProfileUpdateRequest {
   name: string;
   first_name: string;
   last_name: string;
+  /** Foto de perfil (data URI). Vacío elimina la foto. */
+  avatar_url?: string;
 }
 
 /** POST /auth/change-password/ */

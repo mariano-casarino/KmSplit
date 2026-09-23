@@ -12,7 +12,16 @@
   }
 }
 
+.profile-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 10px;
+}
+
 .profile-avatar {
+  position: relative;
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -23,7 +32,49 @@
   justify-content: center;
   font-size: 26px;
   font-weight: 800;
-  margin: 0 auto 10px;
+  cursor: pointer;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.avatar-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.btn-avatar-action {
+  width: auto;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--blue-500);
+  border: 1.5px solid var(--blue-500);
+  font-size: 13px;
+
+  &:hover:not(:disabled) {
+    background: var(--blue-100);
+  }
+
+  &--danger {
+    color: var(--red);
+    border-color: var(--red);
+
+    &:hover:not(:disabled) {
+      background: #fdecec;
+    }
+  }
+}
+
+.avatar-status {
+  font-size: 12px;
+  margin: 0;
 }
 
 .profile-email {

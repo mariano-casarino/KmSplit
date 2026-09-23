@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { DangerButtonComponent } from '../../shared/danger-button/danger-button.component';
+import { fileToCompressedDataUri } from '../../shared/utils/image.util';
 
 type Feedback = { type: 'success' | 'error'; text: string } | null;
 
@@ -28,6 +29,9 @@ export class ProfileComponent {
 
   savingProfile = signal(false);
   profileFeedback = signal<Feedback>(null);
+
+  avatarSaving = signal(false);
+  avatarMessage = signal<string | null>(null);
 
   savingPassword = signal(false);
   passwordFeedback = signal<Feedback>(null);
@@ -82,9 +86,55 @@ export class ProfileComponent {
     });
   }
 
+  /** Iniciales del nombre y apellido que se muestran cuando no hay foto. */
   initials(): string {
-    const name = this.user()?.name?.trim() ?? '';
-    return name ? name.slice(0, 2).toUpperCase() : '?';
+    const user = this.user();
+    if (!user) return '?';
+    const source = user.first_name?.trim() || user.name?.trim() || '';
+    const last = user.last_name?.trim() ?? '';
+    return ((source[0] ?? '?') + (last[0] ?? '')).toUpperCase().slice(0, 2);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    // resetemos el input para poder elegir la misma foto de nuevo
+    input.value = '';
+
+    this.avatarSaving.set(true);
+    this.avatarMessage.set(null);
+
+    fileToCompressedDataUri(file)
+      .then((dataUri) => this.saveAvatar(dataUri))
+      .catch((err: Error) => {
+        this.avatarSaving.set(false);
+        this.avatarMessage.set(err.message);
+      });
+  }
+
+  removeAvatar(): void {
+    this.avatarSaving.set(true);
+    this.avatarMessage.set(null);
+    this.saveAvatar('');
+  }
+
+  private saveAvatar(avatarUrl: string): void {
+    const user = this.user();
+    if (!user) return;
+
+    const { name, first_name, last_name } = this.profileForm.getRawValue();
+    this.auth.updateProfile({ name, first_name, last_name, avatar_url: avatarUrl }).subscribe({
+      next: (updated) => {
+        this.user.set(updated);
+        this.avatarSaving.set(false);
+        this.avatarMessage.set(avatarUrl ? 'Foto de perfil actualizada.' : 'Foto eliminada.');
+      },
+      error: (err) => {
+        this.avatarSaving.set(false);
+        this.avatarMessage.set(err.error?.avatar_url?.[0] ?? 'No pudimos guardar la foto.');
+      },
+    });
   }
 
   saveProfile(): void {

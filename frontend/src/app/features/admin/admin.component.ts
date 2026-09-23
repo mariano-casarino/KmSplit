@@ -294,9 +294,11 @@ loadingProfile = signal(false);
     this.profileMemberUser.set(null);
   }
 
+  /** Iniciales del nombre y apellido (igual que el perfil propio). */
   memberInitials(profile: User): string {
-    const name = profile.name?.trim() ?? '';
-    return name ? name.slice(0, 2).toUpperCase() : '?';
+    const source = profile.first_name?.trim() || profile.name?.trim() || '';
+    const last = profile.last_name?.trim() ?? '';
+    return ((source[0] ?? '?') + (last[0] ?? '')).toUpperCase().slice(0, 2);
   }
 
   fullName(profile: User): string {
