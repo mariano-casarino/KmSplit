@@ -6,12 +6,11 @@ import { Group } from '../../../core/models/group.model';
 import { User } from '../../../core/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
-import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-group-select',
   standalone: true,
-  imports: [CommonModule, RouterLink, ConfirmDialogComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './group-select.component.html',
   styleUrl: './group-select.component.scss',
 })
@@ -27,8 +26,6 @@ export class GroupSelectComponent {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   selectingId = signal<number | null>(null);
-  pendingLogout = signal(false);
-  loggingOut = signal(false);
 
   /** Usuario reactivo: fetchMe corre en paralelo con la lista de grupos y
    *  puede terminar después (los roles se calculan sobre un signal). */
@@ -121,24 +118,5 @@ export class GroupSelectComponent {
     if (membership.role === 'owner') return 'Owner';
     if (membership.role === 'admin') return 'Admin';
     return 'Member';
-  }
-
-  requestLogout(): void {
-    this.pendingLogout.set(true);
-  }
-
-  cancelLogout(): void {
-    this.pendingLogout.set(false);
-  }
-
-  confirmLogout(): void {
-    this.loggingOut.set(true);
-    // logout() llama al backend (invalida la cookie httpOnly del refresh
-    // token), así que hay que esperar la respuesta antes de navegar.
-    this.auth.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: () => this.router.navigate(['/login']),
-      complete: () => this.loggingOut.set(false),
-    });
   }
 }

@@ -10,11 +10,12 @@ import { GroupService } from '../../../core/services/group.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { DangerButtonComponent } from '../../../shared/danger-button/danger-button.component';
 
 @Component({
   selector: 'app-vehicle-select',
   standalone: true,
-  imports: [CommonModule, RouterLink, ArgNumberPipe, ConfirmDialogComponent],
+  imports: [CommonModule, RouterLink, ArgNumberPipe, ConfirmDialogComponent, DangerButtonComponent],
   templateUrl: './vehicle-select.component.html',
   styleUrl: './vehicle-select.component.scss',
 })
@@ -44,11 +45,9 @@ export class VehicleSelectComponent {
   private groupLoaded = false;
   private vehiclesLoaded = false;
 
-  // Copia del grupo que está por abandonar, para el diálogo de confirmación
-  pendingLeaveGroup = signal<Group | null>(null);
-  leaveWarning = signal<string | null>(null);
-  pendingLogout = signal(false);
-  loggingOut = signal(false);
+// Copia del grupo que está por abandonar, para el diálogo de confirmación
+pendingLeaveGroup = signal<Group | null>(null);
+leaveWarning = signal<string | null>(null);
 
   constructor() {
     this.lastVehicleId = this.vehicleService.getLastVehicleId();
@@ -159,25 +158,6 @@ export class VehicleSelectComponent {
       return 'Como sos el dueño, el grupo quedará a cargo del integrante más antiguo.';
     }
     return null;
-  }
-
-  requestLogout(): void {
-    this.pendingLogout.set(true);
-  }
-
-  cancelLogout(): void {
-    this.pendingLogout.set(false);
-  }
-
-  confirmLogout(): void {
-    // logout() llama al backend (para invalidar la cookie httpOnly del
-    // refresh token), así que hay que esperar la respuesta antes de navegar.
-    this.loggingOut.set(true);
-    this.auth.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: () => this.router.navigate(['/login']),
-      complete: () => this.loggingOut.set(false),
-    });
   }
 
   confirmLeaveGroup(): void {

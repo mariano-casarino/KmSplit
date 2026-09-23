@@ -14,6 +14,7 @@ const REFRESH = 'kmsplit_refresh_token';
 const user: User = {
   id: 1,
   name: 'Ana',
+  first_name: '',
   last_name: '',
   email: 'ana@mail.com',
   created_at: '2026-01-01T00:00:00Z',
@@ -97,10 +98,10 @@ describe('AuthService', () => {
     http.expectOne(`${authUrl}/me/`).flush(user);
     expect(service.getCurrentUser()).toEqual(user);
 
-    service.updateProfile({ name: 'Ana', last_name: 'Lopez' }).subscribe();
+    service.updateProfile({ name: 'Ana', first_name: '', last_name: 'Lopez' }).subscribe();
     const req = http.expectOne(`${authUrl}/me/`);
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ name: 'Ana', last_name: 'Lopez' });
+    expect(req.request.body).toEqual({ name: 'Ana', first_name: '', last_name: 'Lopez' });
     req.flush({ ...user, last_name: 'Lopez' });
     expect(service.getCurrentUser()?.last_name).toBe('Lopez');
   });

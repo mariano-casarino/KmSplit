@@ -72,8 +72,12 @@ export class SettlementDetailComponent implements OnInit {
         const membership = user
           ? group.members.find((m) => m.user === user.id)
           : undefined;
+        // Editar/eliminar una liquidación solo aplica si es la última del
+        // vehículo: si hay otra más reciente, el backend no la deja borrar.
+        const isLastSettlement = !settlements.some((s) => s.id > settlement.id);
         this.canManage.set(
-          membership?.role === 'owner' || membership?.role === 'admin',
+          (membership?.role === 'owner' || membership?.role === 'admin') &&
+            isLastSettlement,
         );
         this.loading.set(false);
       },

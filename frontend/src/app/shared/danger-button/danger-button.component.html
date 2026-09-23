@@ -1,0 +1,8 @@
+<button
+  class="btn danger-btn"
+  type="button"
+  [disabled]="disabled || busy"
+  (click)="click()"
+>
+  {{ busy ? busyLabel : label }}
+</button>

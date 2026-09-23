@@ -155,12 +155,12 @@
       @for (member of activeMembers; track member.id) {
         <div class="member-row">
           <div>
-            <p class="member-name">
+            <button class="member-name-btn" type="button" (click)="openMemberProfile(member)">
               {{ member.user_name }}
               @if (member.user === currentUserId) {
                 <span class="muted">(vos)</span>
               }
-            </p>
+            </button>
             <p class="muted member-email">{{ member.user_email }}</p>
           </div>
           <div class="member-actions">
@@ -226,6 +226,43 @@
           Sí, eliminar
         </button>
       </div>
+    </div>
+  </div>
+}
+
+@if (profileMember(); as member) {
+  <div class="dialog-overlay" (click)="closeMemberProfile()">
+    <div
+      class="confirm-dialog member-profile-card"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      @if (loadingProfile()) {
+        <p class="muted">Cargando...</p>
+      } @else if (profileMemberUser(); as profile) {
+        <div class="member-profile-avatar">{{ memberInitials(profile) }}</div>
+        <h2 class="dialog-title member-profile-name">{{ profile.name }}</h2>
+        @if (fullName(profile)) {
+          <p class="muted member-profile-real">{{ fullName(profile) }}</p>
+        }
+        <p class="muted member-profile-email">{{ member.user_email }}</p>
+        <div class="member-profile-badge">
+          <span class="role-badge" [class]="'role-' + member.role">{{ roleLabel(member.role) }}</span>
+          @if (member.user === currentUserId) {
+            <span class="muted">(vos)</span>
+          }
+        </div>
+        <p class="muted member-profile-joined">
+          Integrante desde el {{ joinedLabel(member.joined_at) }}
+        </p>
+        <button class="btn btn-confirm" type="button" (click)="closeMemberProfile()">
+          Cerrar
+        </button>
+      } @else {
+        <p class="dialog-text">No pudimos cargar este perfil.</p>
+        <button class="btn" type="button" (click)="closeMemberProfile()">Cerrar</button>
+      }
     </div>
   </div>
 }

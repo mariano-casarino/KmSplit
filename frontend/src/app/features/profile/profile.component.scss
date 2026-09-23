@@ -59,8 +59,27 @@
   border-radius: var(--radius-sm);
 }
 
-.logout-link {
-  align-self: center;
-  color: var(--red);
-  font-size: 14px;
+.profile-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-label {
+  width: 72px;
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.profile-field-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .field {
+    margin: 0;
+  }
 }

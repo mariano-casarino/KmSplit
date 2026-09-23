@@ -6,6 +6,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { Group, GroupMembership, GroupRole } from '../../core/models/group.model';
 import { FuelType, Vehicle } from '../../core/models/vehicle.model';
+import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
 import { GroupService } from '../../core/services/group.service';
 import { VehicleService } from '../../core/services/vehicle.service';
@@ -56,8 +57,13 @@ export class AdminComponent implements OnInit {
   confirmDialog = signal<boolean>(false);
   kmWarning = signal(false);
 
-  removeDialog = signal<boolean>(false);
-  memberToRemove = signal<GroupMembership | null>(null);
+removeDialog = signal<boolean>(false);
+memberToRemove = signal<GroupMembership | null>(null);
+
+/** Perfil del integrante abierto al tocar su nombre (acceso rápido). */
+profileMember = signal<GroupMembership | null>(null);
+profileMemberUser = signal<User | null>(null);
+loadingProfile = signal(false);
 
   currentUserId = 0;
   myRole = signal<GroupRole | null>(null);
@@ -267,6 +273,47 @@ export class AdminComponent implements OnInit {
   cancelRemoveMember(): void {
     this.removeDialog.set(false);
     this.memberToRemove.set(null);
+  }
+
+  openMemberProfile(member: GroupMembership): void {
+    this.profileMember.set(member);
+    this.loadingProfile.set(true);
+    this.auth.getUserById(member.user).subscribe({
+      next: (profile) => {
+        this.profileMemberUser.set(profile);
+        this.loadingProfile.set(false);
+      },
+      error: () => {
+        this.loadingProfile.set(false);
+      },
+    });
+  }
+
+  closeMemberProfile(): void {
+    this.profileMember.set(null);
+    this.profileMemberUser.set(null);
+  }
+
+  memberInitials(profile: User): string {
+    const name = profile.name?.trim() ?? '';
+    return name ? name.slice(0, 2).toUpperCase() : '?';
+  }
+
+  fullName(profile: User): string {
+    return [profile.first_name, profile.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  }
+
+  joinedLabel(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('es-AR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   roleLabel(role: GroupRole): string {

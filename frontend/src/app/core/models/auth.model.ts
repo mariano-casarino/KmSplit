@@ -13,7 +13,9 @@ export interface RegisterRequest {
 
 /** PUT /auth/me/ — edición de perfil (el email es solo lectura). */
 export interface ProfileUpdateRequest {
+  /** Apodo: el nombre que se muestra en toda la app. */
   name: string;
+  first_name: string;
   last_name: string;
 }
 

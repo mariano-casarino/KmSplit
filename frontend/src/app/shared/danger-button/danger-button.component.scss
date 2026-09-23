@@ -1,0 +1,9 @@
+.danger-btn {
+  background: transparent;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+
+  &:hover:not(:disabled) {
+    background: #fdecec;
+  }
+}

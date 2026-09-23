@@ -16,15 +16,28 @@
     <div class="profile-section">
       <h2>Datos</h2>
       <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
-        <div>
-          <input class="field" type="text" formControlName="name" placeholder="Apodo o nombre" />
-          @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
-            <p class="field-error">El apodo no puede estar vacío.</p>
-          }
+        <div class="profile-field">
+          <label class="profile-label" for="profile-nickname">Apodo</label>
+          <div class="profile-field-input">
+            <input class="field" id="profile-nickname" type="text" formControlName="name" placeholder="Apodo" />
+            @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
+              <p class="field-error">El apodo no puede estar vacío.</p>
+            }
+          </div>
         </div>
 
-        <div>
-          <input class="field" type="text" formControlName="last_name" placeholder="Apellido" />
+        <div class="profile-field">
+          <label class="profile-label" for="profile-first-name">Nombre</label>
+          <div class="profile-field-input">
+            <input class="field" id="profile-first-name" type="text" formControlName="first_name" placeholder="Nombre" />
+          </div>
+        </div>
+
+        <div class="profile-field">
+          <label class="profile-label" for="profile-last-name">Apellido</label>
+          <div class="profile-field-input">
+            <input class="field" id="profile-last-name" type="text" formControlName="last_name" placeholder="Apellido" />
+          </div>
         </div>
 
         @if (profileFeedback(); as feedback) {
@@ -152,9 +165,7 @@
       </form>
     </div>
 
-    <button class="link link-danger logout-link" type="button" (click)="requestLogout()">
-      Cerrar sesión
-    </button>
+    <app-danger-button label="Cerrar sesión" (clicked)="requestLogout()" />
   }
 </div>
 

@@ -62,20 +62,6 @@
   margin: 0;
 }
 
-.link-danger {
-  color: var(--red);
-  font-size: 13px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.link-danger:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .vehicle-card {
   display: flex;
   align-items: center;
@@ -237,9 +223,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.leave-link {
-  align-self: center;
-  padding-bottom: 8px;
 }

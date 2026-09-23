@@ -7,13 +7,14 @@ import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
+import { DangerButtonComponent } from '../../shared/danger-button/danger-button.component';
 
 type Feedback = { type: 'success' | 'error'; text: string } | null;
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, ConfirmDialogComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, ConfirmDialogComponent, DangerButtonComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -40,6 +41,7 @@ export class ProfileComponent {
 
   profileForm = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
+    first_name: [''],
     last_name: [''],
   });
 
@@ -73,7 +75,11 @@ export class ProfileComponent {
   }
 
   private patchProfileForm(user: User): void {
-    this.profileForm.patchValue({ name: user.name, last_name: user.last_name });
+    this.profileForm.patchValue({
+      name: user.name,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    });
   }
 
   initials(): string {
@@ -86,11 +92,11 @@ export class ProfileComponent {
       this.profileForm.markAllAsTouched();
       return;
     }
-    const { name, last_name } = this.profileForm.getRawValue();
+    const { name, first_name, last_name } = this.profileForm.getRawValue();
     this.savingProfile.set(true);
     this.profileFeedback.set(null);
 
-    this.auth.updateProfile({ name, last_name }).subscribe({
+    this.auth.updateProfile({ name, first_name, last_name }).subscribe({
       next: (user) => {
         this.user.set(user);
         this.savingProfile.set(false);

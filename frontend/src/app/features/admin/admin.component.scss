@@ -165,11 +165,21 @@
   border-radius: var(--radius-sm);
 }
 
-.member-name {
+.member-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 13.5px;
   font-weight: 700;
   color: var(--gray-900);
   margin: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .member-email {
@@ -328,4 +338,50 @@
   &:hover:not(:disabled) {
     background: #2e8b4f;
   }
+}
+
+/* ===== Perfil de integrante (acceso rápido al tocar su nombre) ===== */
+.member-profile-card {
+  text-align: center;
+}
+
+.member-profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--blue-100);
+  color: var(--blue-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 auto 12px;
+}
+
+.member-profile-name {
+  margin-bottom: 2px;
+}
+
+.member-profile-real {
+  font-size: 13px;
+  margin: 0 0 2px;
+}
+
+.member-profile-email {
+  font-size: 12px;
+  margin: 4px 0 14px;
+}
+
+.member-profile-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.member-profile-joined {
+  font-size: 11.5px;
+  margin: 0 0 16px;
 }
