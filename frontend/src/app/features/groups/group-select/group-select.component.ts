@@ -19,6 +19,9 @@ export class GroupSelectComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
+  /** Cuándo se entró por última vez a cada grupo: {"<groupId>": epochMs}. */
+  private static readonly LAST_GROUP_ACCESS_KEY = 'kmsplit_last_group_access';
+
   groups = signal<Group[]>([]);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -69,7 +72,39 @@ export class GroupSelectComponent {
     this.selectingId.set(group.id);
     this.errorMessage.set(null);
     this.groupService.setActiveGroupId(group.id);
+    this.saveLastAccess(group.id);
     this.router.navigate(['/vehiculos']);
+  }
+
+  private saveLastAccess(groupId: number): void {
+    try {
+      const raw = localStorage.getItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY);
+      const map = raw ? JSON.parse(raw) : {};
+      map[groupId] = Date.now();
+      localStorage.setItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY, JSON.stringify(map));
+    } catch {
+      /* localStorage no disponible: solo se pierde el "último acceso" */
+    }
+  }
+
+  private lastAccessTs(groupId: number): number | null {
+    try {
+      const raw = localStorage.getItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY);
+      if (!raw) return null;
+      const map = JSON.parse(raw);
+      return typeof map[groupId] === 'number' ? map[groupId] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  lastAccessLabel(group: Group): string {
+    const ts = this.lastAccessTs(group.id);
+    if (ts === null) return 'Último acceso';
+    const days = Math.floor((Date.now() - ts) / 86_400_000);
+    if (days <= 0) return 'Últ. acceso: hoy';
+    if (days === 1) return 'Últ. acceso: ayer';
+    return `Últ. acceso: hace ${days} días`;
   }
 
   memberCount(group: Group): number {
