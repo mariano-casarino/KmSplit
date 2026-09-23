@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { interval, take } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { SessionResumeService } from '../../../core/services/session-resume.service';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private sessionResume = inject(SessionResumeService);
   private destroyRef = inject(DestroyRef);
 
   loading = signal(false);
@@ -47,11 +49,11 @@ export class LoginComponent {
         this.auth.fetchMe().subscribe({
           next: () => {
             this.loading.set(false);
-            this.router.navigate(['/grupos/selector']);
+            this.resume();
           },
           error: () => {
             this.loading.set(false);
-            this.router.navigate(['/grupos/selector']);
+            this.resume();
           },
         });
       },
@@ -81,6 +83,15 @@ export class LoginComponent {
     const minutes = Math.floor(s / 60);
     const seconds = s % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  /** Tras loguear, intenta volver al último vehículo (si existe el contexto);
+   *  si la reanudación falla, cae al selector de grupos. */
+  private resume(): void {
+    this.sessionResume.resumeRoute().subscribe({
+      next: (route) => this.router.navigate(route),
+      error: () => this.router.navigate(['/grupos/selector']),
+    });
   }
 
   private startLockoutCountdown(seconds: number): void {

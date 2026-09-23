@@ -1,0 +1,24 @@
+<div class="dialog-overlay" (click)="cancel()">
+  <div class="confirm-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <h2 class="dialog-title">{{ title }}</h2>
+    <p class="dialog-text">{{ message }}</p>
+    @if (warning) {
+      <p class="dialog-warning">{{ warning }}</p>
+    }
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="busy">
+        {{ cancelLabel }}
+      </button>
+      <button
+        class="btn"
+        [class.btn-danger]="variant === 'danger'"
+        [class.btn-success]="variant === 'confirm'"
+        type="button"
+        (click)="confirm()"
+        [disabled]="busy"
+      >
+        {{ confirmLabel }}
+      </button>
+    </div>
+  </div>
+</div>

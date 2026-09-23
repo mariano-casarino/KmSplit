@@ -9,11 +9,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
+import { ConfirmDialogComponent } from '../../../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-vehicle-select',
   standalone: true,
-  imports: [CommonModule, RouterLink, ArgNumberPipe],
+  imports: [CommonModule, RouterLink, ArgNumberPipe, ConfirmDialogComponent],
   templateUrl: './vehicle-select.component.html',
   styleUrl: './vehicle-select.component.scss',
 })
@@ -45,6 +46,9 @@ export class VehicleSelectComponent {
 
   // Copia del grupo que está por abandonar, para el diálogo de confirmación
   pendingLeaveGroup = signal<Group | null>(null);
+  leaveWarning = signal<string | null>(null);
+  pendingLogout = signal(false);
+  loggingOut = signal(false);
 
   constructor() {
     this.lastVehicleId = this.vehicleService.getLastVehicleId();
@@ -138,11 +142,42 @@ export class VehicleSelectComponent {
 
   /** Abre el diálogo de confirmación dentro de la app (no window.confirm). */
   requestLeaveGroup(group: Group): void {
+    this.leaveWarning.set(this.leaveGroupWarning(group));
     this.pendingLeaveGroup.set(group);
   }
 
   cancelLeaveGroup(): void {
     this.pendingLeaveGroup.set(null);
+    this.leaveWarning.set(null);
+  }
+
+  private leaveGroupWarning(group: Group): string | null {
+    if (this.iAmSoleOwner(group)) {
+      return 'Sos el único integrante: al salir, el grupo y sus vehículos se eliminarán definitivamente.';
+    }
+    if (this.iAmOwner(group)) {
+      return 'Como sos el dueño, el grupo quedará a cargo del integrante más antiguo.';
+    }
+    return null;
+  }
+
+  requestLogout(): void {
+    this.pendingLogout.set(true);
+  }
+
+  cancelLogout(): void {
+    this.pendingLogout.set(false);
+  }
+
+  confirmLogout(): void {
+    // logout() llama al backend (para invalidar la cookie httpOnly del
+    // refresh token), así que hay que esperar la respuesta antes de navegar.
+    this.loggingOut.set(true);
+    this.auth.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login']),
+      complete: () => this.loggingOut.set(false),
+    });
   }
 
   confirmLeaveGroup(): void {
@@ -150,6 +185,7 @@ export class VehicleSelectComponent {
     if (!group) return;
 
     this.pendingLeaveGroup.set(null);
+    this.leaveWarning.set(null);
     this.leavingGroupId.set(group.id);
     this.errorMessage.set(null);
 
@@ -164,15 +200,6 @@ export class VehicleSelectComponent {
         this.leavingGroupId.set(null);
         this.errorMessage.set(err.error?.detail ?? 'No pudimos abandonar el grupo.');
       },
-    });
-  }
-
-  logout(): void {
-    // logout() ahora llama al backend (para invalidar la cookie httpOnly
-    // del refresh token), así que hay que esperar la respuesta antes de
-    // navegar -- ya no es una limpieza sincrónica de localStorage nomás.
-    this.auth.logout().subscribe(() => {
-      this.router.navigate(['/login']);
     });
   }
 }

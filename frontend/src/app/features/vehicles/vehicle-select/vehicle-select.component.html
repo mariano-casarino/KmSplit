@@ -24,7 +24,7 @@
       </svg>
     </button>
     <h1>{{ group()?.name ?? 'Vehículos' }}</h1>
-    <button class="icon-btn" type="button" (click)="logout()" aria-label="Cerrar sesión">
+    <button class="icon-btn" type="button" (click)="requestLogout()" aria-label="Cerrar sesión">
       <svg
         width="20"
         height="20"
@@ -112,31 +112,25 @@
 </div>
 
 @if (pendingLeaveGroup(); as group) {
-  <div class="dialog-overlay" (click)="cancelLeaveGroup()">
-    <div class="confirm-dialog" role="dialog" aria-modal="true">
-      <h2 class="dialog-title">Abandonar grupo</h2>
-      <p class="dialog-text">
-        ¿Estás seguro de que querés salir de
-        <strong>&quot;{{ group.name }}&quot;</strong>?
-      </p>
-      @if (iAmSoleOwner(group)) {
-        <p class="dialog-warning">
-          Sos el único integrante: al salir, el grupo y sus vehículos se
-          eliminarán definitivamente.
-        </p>
-      } @else if (iAmOwner(group)) {
-        <p class="dialog-warning">
-          Como sos el dueño, el grupo quedará a cargo del integrante más antiguo.
-        </p>
-      }
-      <div class="dialog-actions">
-        <button class="btn btn-danger" type="button" (click)="cancelLeaveGroup()">
-          Cancelar
-        </button>
-        <button class="btn btn-confirm" type="button" (click)="confirmLeaveGroup()">
-          Sí, salir
-        </button>
-      </div>
-    </div>
-  </div>
+  <app-confirm-dialog
+    title="Abandonar grupo"
+    [message]="'¿Estás seguro de que querés salir de &quot;' + group.name + '&quot;?'"
+    confirmLabel="Sí, salir"
+    [warning]="leaveWarning()"
+    [busy]="leavingGroupId() === group.id"
+    (confirmed)="confirmLeaveGroup()"
+    (cancelled)="cancelLeaveGroup()"
+  />
+}
+
+@if (pendingLogout()) {
+  <app-confirm-dialog
+    title="Cerrar sesión"
+    message="¿Querés cerrar tu sesión? Vas a tener que volver a iniciar sesión para cargar datos."
+    confirmLabel="Cerrar sesión"
+    variant="danger"
+    [busy]="loggingOut()"
+    (confirmed)="confirmLogout()"
+    (cancelled)="cancelLogout()"
+  />
 }

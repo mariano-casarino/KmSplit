@@ -11,7 +11,13 @@ const authUrl = `${environment.apiUrl}/auth`;
 const ACCESS = 'kmsplit_access_token';
 const REFRESH = 'kmsplit_refresh_token';
 
-const user: User = { id: 1, name: 'Ana', email: 'ana@mail.com', created_at: '2026-01-01T00:00:00Z' };
+const user: User = {
+  id: 1,
+  name: 'Ana',
+  last_name: '',
+  email: 'ana@mail.com',
+  created_at: '2026-01-01T00:00:00Z',
+};
 
 /** Arma un token JWT falso con el exp dado (segundos desde epoch). */
 function jwt(expSec: number): string {
@@ -83,6 +89,34 @@ describe('AuthService', () => {
 
     service.getUserById(1).subscribe();
     expect(http.match(`${authUrl}/users/1/`)).toEqual([]);
+  });
+
+  it('updateProfile() hace PUT /me/ y refresca el usuario en memoria', () => {
+    localStorage.setItem(ACCESS, 'at');
+    service.fetchMe().subscribe();
+    http.expectOne(`${authUrl}/me/`).flush(user);
+    expect(service.getCurrentUser()).toEqual(user);
+
+    service.updateProfile({ name: 'Ana', last_name: 'Lopez' }).subscribe();
+    const req = http.expectOne(`${authUrl}/me/`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ name: 'Ana', last_name: 'Lopez' });
+    req.flush({ ...user, last_name: 'Lopez' });
+    expect(service.getCurrentUser()?.last_name).toBe('Lopez');
+  });
+
+  it('changePassword() hace POST /change-password/', () => {
+    service
+      .changePassword({ current_password: 'a', new_password: 'b', confirm_password: 'b' })
+      .subscribe();
+    const req = http.expectOne(`${authUrl}/change-password/`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      current_password: 'a',
+      new_password: 'b',
+      confirm_password: 'b',
+    });
+    req.flush({ detail: 'Contraseña actualizada.' });
   });
 
   it('refresh() comparte la request entre llamadores paralelos y rota los tokens', () => {

@@ -206,6 +206,19 @@ input[type='date'] {
   }
 }
 
+/* Banner de éxito (verde) */
+.banner-success {
+  background: #e6f5ea;
+  border: 1px solid var(--green);
+  color: #1e7a45;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 /* Banner de alerta (ámbar) */
 .banner-alert {
   background: #fbf1de;

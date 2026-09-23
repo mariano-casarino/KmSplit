@@ -11,6 +11,19 @@ export interface RegisterRequest {
   password: string;
 }
 
+/** PUT /auth/me/ — edición de perfil (el email es solo lectura). */
+export interface ProfileUpdateRequest {
+  name: string;
+  last_name: string;
+}
+
+/** POST /auth/change-password/ */
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
 export interface PasswordResetRequest {
   email: string;
 }

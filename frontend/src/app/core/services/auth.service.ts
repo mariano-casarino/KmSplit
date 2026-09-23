@@ -5,10 +5,12 @@ import { BehaviorSubject, Observable, catchError, finalize, of, shareReplay, tap
 import { environment } from '../../../environments/environment';
 import {
   AccessTokenResponse,
+  ChangePasswordRequest,
   LoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
+  ProfileUpdateRequest,
   RegisterRequest,
 } from '../models/auth.model';
 import { User } from '../models/user.model';
@@ -165,6 +167,19 @@ export class AuthService {
 
   confirmPasswordReset(payload: PasswordResetConfirmRequest): Observable<{ detail: string }> {
     return this.http.post<{ detail: string }>(`${this.baseUrl}/password-reset/confirm/`, payload);
+  }
+
+  /** PUT /auth/me/ — actualiza apodo (name) y apellido (last_name). El email
+   *  es de solo lectura en el backend; el usuario cacheado se refresca. */
+  updateProfile(payload: ProfileUpdateRequest): Observable<User> {
+    return this.http.put<User>(`${this.baseUrl}/me/`, payload).pipe(
+      tap((user) => this.currentUserSubject.next(user)),
+    );
+  }
+
+  /** POST /auth/change-password/ — cambia la contraseña del usuario logueado. */
+  changePassword(payload: ChangePasswordRequest): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.baseUrl}/change-password/`, payload);
   }
 
   private clearLocalSession(): void {

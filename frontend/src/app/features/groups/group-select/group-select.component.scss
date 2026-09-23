@@ -9,7 +9,20 @@
     font-weight: 800;
     color: var(--gray-900);
     margin: 0;
+    flex: 1;
+    min-width: 0;
   }
+}
+
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.auth-actions a.icon-btn {
+  text-decoration: none;
 }
 
 .group-hint {

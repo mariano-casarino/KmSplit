@@ -1,0 +1,171 @@
+<div class="screen">
+  <div class="profile-header">
+    <app-back-button link="/grupos/selector" />
+    <h1>Perfil</h1>
+    <span class="icon-btn-spacer"></span>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Cargando...</p>
+  } @else if (user(); as user) {
+    <div class="profile-avatar">
+      <span>{{ initials() }}</span>
+    </div>
+    <p class="muted profile-email">{{ user.email }}</p>
+
+    <div class="profile-section">
+      <h2>Datos</h2>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+        <div>
+          <input class="field" type="text" formControlName="name" placeholder="Apodo o nombre" />
+          @if (profileForm.controls.name.invalid && profileForm.controls.name.touched) {
+            <p class="field-error">El apodo no puede estar vacío.</p>
+          }
+        </div>
+
+        <div>
+          <input class="field" type="text" formControlName="last_name" placeholder="Apellido" />
+        </div>
+
+        @if (profileFeedback(); as feedback) {
+          <p [class.banner-success]="feedback.type === 'success'" [class.banner-error]="feedback.type === 'error'">
+            {{ feedback.text }}
+          </p>
+        }
+
+        <button class="btn" type="submit" [disabled]="savingProfile()">
+          {{ savingProfile() ? 'Guardando...' : 'Guardar perfil' }}
+        </button>
+      </form>
+    </div>
+
+    <div class="profile-section">
+      <h2>Cambiar contraseña</h2>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="profile-form">
+        <div>
+          <div class="password-wrap">
+            <input
+              class="field"
+              [type]="showCurrentPassword() ? 'text' : 'password'"
+              formControlName="current_password"
+              placeholder="Contraseña actual"
+              autocomplete="current-password"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="showCurrentPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showCurrentPassword.set(!showCurrentPassword())"
+            >
+              <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @if (showCurrentPassword()) {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                } @else {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+          @if (passwordForm.controls.current_password.invalid && passwordForm.controls.current_password.touched) {
+            <p class="field-error">Ingresá tu contraseña actual.</p>
+          }
+        </div>
+
+        <div>
+          <div class="password-wrap">
+            <input
+              class="field"
+              [type]="showNewPassword() ? 'text' : 'password'"
+              formControlName="new_password"
+              placeholder="Contraseña nueva"
+              autocomplete="new-password"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="showNewPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showNewPassword.set(!showNewPassword())"
+            >
+              <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @if (showNewPassword()) {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                } @else {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+          @if (passwordForm.controls.new_password.invalid && passwordForm.controls.new_password.touched) {
+            <p class="field-error">Mínimo 8 caracteres.</p>
+          }
+        </div>
+
+        <div>
+          <div class="password-wrap">
+            <input
+              class="field"
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              formControlName="confirm_password"
+              placeholder="Confirmar contraseña nueva"
+              autocomplete="new-password"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="showConfirmPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showConfirmPassword.set(!showConfirmPassword())"
+            >
+              <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @if (showConfirmPassword()) {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                } @else {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+          @if (passwordForm.errors?.['passwordMismatch'] && passwordForm.controls.confirm_password.touched) {
+            <p class="field-error">Las contraseñas no coinciden.</p>
+          } @else if (passwordForm.controls.confirm_password.invalid && passwordForm.controls.confirm_password.touched) {
+            <p class="field-error">Confirmá la contraseña nueva.</p>
+          }
+        </div>
+
+        @if (passwordFeedback(); as feedback) {
+          <p [class.banner-success]="feedback.type === 'success'" [class.banner-error]="feedback.type === 'error'">
+            {{ feedback.text }}
+          </p>
+        }
+
+        <button class="btn" type="submit" [disabled]="savingPassword()">
+          {{ savingPassword() ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </form>
+    </div>
+
+    <button class="link link-danger logout-link" type="button" (click)="requestLogout()">
+      Cerrar sesión
+    </button>
+  }
+</div>
+
+@if (pendingLogout()) {
+  <app-confirm-dialog
+    title="Cerrar sesión"
+    message="¿Querés cerrar tu sesión? Vas a tener que volver a iniciar sesión para cargar datos."
+    confirmLabel="Cerrar sesión"
+    variant="danger"
+    [busy]="loggingOut()"
+    (confirmed)="confirmLogout()"
+    (cancelled)="cancelLogout()"
+  />
+}
