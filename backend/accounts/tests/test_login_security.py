@@ -79,6 +79,17 @@ class TestPasswordValidation:
         )
         assert response.status_code == 201
 
+    def test_register_saves_nickname_and_last_name(self):
+        client = APIClient()
+        response = client.post(
+            "/api/auth/register/",
+            {"name": "Pepe", "last_name": "Gómez", "email": "pepe@test.com", "password": "Xk9$mQ2vRp8Lw"},
+            format="json",
+        )
+        assert response.status_code == 201
+        assert response.data["name"] == "Pepe"
+        assert response.data["last_name"] == "Gómez"
+
 class TestCookieBasedRefresh:
     def test_login_sets_httponly_refresh_cookie_and_also_returns_it_in_body(self, test_user):
         """Dual-write: el refresh token vive en la cookie httpOnly (primario)

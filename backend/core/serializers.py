@@ -9,6 +9,7 @@ from .models import (
     Trip,
     Vehicle,
 )
+from .validators import validate_image_data_uri
 
 
 class GroupMembershipSerializer(serializers.ModelSerializer):
@@ -58,25 +59,10 @@ class VehicleSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate_photo_url(self, value):
-        """La foto se guarda como data URI (base64). Vacío = sin foto.
-        Acepta data:image/* (subida del usuario) o https:// (URL externa,
-        para una integración futura). Todo lo demás se rechaza."""
-        if not value:
-            # vacío/None = sin foto (placeholder) o limpiar la foto
-            return value
-        if not isinstance(value, str):
-            raise serializers.ValidationError("La foto debe ser un texto.")
-        # Límite blando ~4 MB en base64 (~3 MB de imagen). Evita filas gigantes.
-        max_len = 4 * 1024 * 1024
-        if len(value) > max_len:
-            raise serializers.ValidationError(
-                "La foto es demasiado grande. Probá con una imagen más liviana."
-            )
-        if value.startswith("data:image/") or value.startswith("http://") or value.startswith("https://"):
-            return value
-        raise serializers.ValidationError(
-            "La foto debe ser una imagen base64 (data:image/...) o una URL."
-        )
+        """La foto del vehículo se guarda como data URI (base64). Vacío = sin
+        foto. La validación vive en core.validators (se comparte con el avatar
+        de perfil del usuario)."""
+        return validate_image_data_uri(value)
 
 
 class TripSerializer(serializers.ModelSerializer):

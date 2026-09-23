@@ -39,6 +39,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=150)
     first_name = models.CharField(max_length=150, blank=True, default="")
     last_name = models.CharField(max_length=150, blank=True, default="")
+    # Foto de perfil como data URI (base64), igual que la foto del vehículo.
+    # Vacío = sin foto: la app muestra las iniciales del nombre y apellido.
+    avatar_url = models.TextField(blank=True, default="")
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

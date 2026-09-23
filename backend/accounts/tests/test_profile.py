@@ -6,6 +6,8 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
+DATA_URI = "data:image/png;base64,iVBORw0KGgo="
+
 
 @pytest.fixture
 def authed_client(test_user):
@@ -28,6 +30,55 @@ class TestMeProfile:
         assert response.data["name"] == "Mariano"
         assert response.data["first_name"] == ""
         assert response.data["last_name"] == ""
+        assert response.data["avatar_url"] == ""
+
+    def test_me_update_avatar_url(self, test_user, authed_client):
+        response = authed_client.put(
+            "/api/auth/me/",
+            {
+                "name": "Mariano",
+                "first_name": "",
+                "last_name": "",
+                "avatar_url": DATA_URI,
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.data["avatar_url"] == DATA_URI
+        test_user.refresh_from_db()
+        assert test_user.avatar_url == DATA_URI
+
+    def test_me_update_avatar_rejects_unknown_format(self, test_user, authed_client):
+        response = authed_client.put(
+            "/api/auth/me/",
+            {
+                "name": "Mariano",
+                "first_name": "",
+                "last_name": "",
+                "avatar_url": "javascript:alert(1)",
+            },
+            format="json",
+        )
+        assert response.status_code == 400
+        assert "avatar_url" in response.data
+
+    def test_me_remove_avatar_url(self, test_user, authed_client):
+        test_user.avatar_url = DATA_URI
+        test_user.save()
+        response = authed_client.put(
+            "/api/auth/me/",
+            {
+                "name": "Mariano",
+                "first_name": "",
+                "last_name": "",
+                "avatar_url": "",
+            },
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.data["avatar_url"] == ""
+        test_user.refresh_from_db()
+        assert test_user.avatar_url == ""
 
     def test_me_update_name_and_last_name_ignores_email(self, test_user, authed_client):
         response = authed_client.put(

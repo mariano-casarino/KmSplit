@@ -2,6 +2,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
+from core.validators import validate_image_data_uri
+
 from .models import User
 
 
@@ -10,7 +12,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "name", "email", "password"]
+        fields = ["id", "name", "last_name", "email", "password"]
 
     def validate_password(self, value):
         # Django trae validadores por default (largo mínimo, no ser una
@@ -29,18 +31,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "first_name", "last_name", "email", "created_at"]
+        fields = ["id", "name", "first_name", "last_name", "avatar_url", "email", "created_at"]
         read_only_fields = fields
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    """PUT /api/auth/me/ — el usuario edita su perfil (apodo + nombre + apellido).
-    El email es el identificador de la cuenta: solo lectura por ahora."""
+    """PUT /api/auth/me/ — el usuario edita su perfil (apodo + nombre + apellido)
+    y su foto de perfil (avatar_url, data URI). El email es el identificador de
+    la cuenta: solo lectura por ahora."""
 
     class Meta:
         model = User
-        fields = ["id", "name", "first_name", "last_name", "email"]
+        fields = ["id", "name", "first_name", "last_name", "avatar_url", "email"]
         read_only_fields = ["id", "email"]
+
+    def validate_avatar_url(self, value):
+        """Misma validación que la foto del vehículo (core.validators)."""
+        return validate_image_data_uri(value)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

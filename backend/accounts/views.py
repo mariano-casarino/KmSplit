@@ -262,8 +262,8 @@ class LogoutView(APIView):
 
 class MeView(APIView):
     """GET/PUT /api/auth/me/ — perfil del usuario logueado (según el token).
-    GET lo devuelve; PUT edita apodo (name) y apellido (last_name). El email
-    es de solo lectura."""
+    GET lo devuelve; PUT edita apodo (name), nombre, apellido y foto de perfil
+    (avatar_url). El email es de solo lectura."""
 
     permission_classes = [permissions.IsAuthenticated]
 
