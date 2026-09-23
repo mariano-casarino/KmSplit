@@ -15,10 +15,11 @@ from .validators import validate_image_data_uri
 class GroupMembershipSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
     user_email = serializers.CharField(source="user.email", read_only=True)
+    user_avatar = serializers.CharField(source="user.avatar_url", read_only=True)
 
     class Meta:
         model = GroupMembership
-        fields = ["id", "user", "user_name", "user_email", "role", "is_active", "joined_at"]
+        fields = ["id", "user", "user_name", "user_email", "user_avatar", "role", "is_active", "joined_at"]
         read_only_fields = ["id", "joined_at", "is_active"]
 
 

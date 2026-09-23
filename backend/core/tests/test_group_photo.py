@@ -52,3 +52,14 @@ class TestGroupPhoto:
         response = client.get(f"/api/groups/{group.id}/")
         assert response.status_code == 200
         assert response.data["avatar_url"] == DATA_URI
+
+    def test_members_expose_the_profile_photo(self, family):
+        """La lista de integrantes incluye user_avatar: así el front muestra la
+        foto de perfil actualizada sin pedir cada usuario por separado."""
+        family["owner"].avatar_url = DATA_URI
+        family["owner"].save()
+        client = auth_client(family["member"])
+        response = client.get(f"/api/groups/{family['group'].id}/")
+        owner = next(m for m in response.data["members"] if m["user"] == family["owner"].id)
+        assert owner["user_avatar"] == DATA_URI
+        assert all("user_avatar" in m for m in response.data["members"])
