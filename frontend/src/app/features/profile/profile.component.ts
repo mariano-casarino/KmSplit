@@ -32,6 +32,7 @@ export class ProfileComponent {
 
   avatarSaving = signal(false);
   avatarFeedback = signal<Feedback>(null);
+  private avatarTimer: ReturnType<typeof setTimeout> | null = null;
 
   savingPassword = signal(false);
   passwordFeedback = signal<Feedback>(null);
@@ -104,6 +105,7 @@ export class ProfileComponent {
 
     this.avatarSaving.set(true);
     this.avatarFeedback.set(null);
+    this.clearAvatarTimer();
 
     fileToCompressedDataUri(file)
       .then((dataUri) => this.saveAvatar(dataUri))
@@ -116,6 +118,7 @@ export class ProfileComponent {
   removeAvatar(): void {
     this.avatarSaving.set(true);
     this.avatarFeedback.set(null);
+    this.clearAvatarTimer();
     this.saveAvatar('');
   }
 
@@ -132,6 +135,9 @@ export class ProfileComponent {
           type: 'success',
           text: avatarUrl ? 'Foto de perfil actualizada.' : 'Foto eliminada.',
         });
+        // el mensaje de éxito se oculta solo tras 3 segundos
+        this.clearAvatarTimer();
+        this.avatarTimer = setTimeout(() => this.avatarFeedback.set(null), 3000);
       },
       error: (err) => {
         this.avatarSaving.set(false);
@@ -141,6 +147,13 @@ export class ProfileComponent {
         });
       },
     });
+  }
+
+  private clearAvatarTimer(): void {
+    if (this.avatarTimer) {
+      clearTimeout(this.avatarTimer);
+      this.avatarTimer = null;
+    }
   }
 
   saveProfile(): void {
