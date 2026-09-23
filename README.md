@@ -184,7 +184,7 @@ Para este proyecto se diseñó el Modelo Relacional utilizando dbdiagram.io, una
 ## 👤 Autor
 
 **Mariano Casarino** — Estudiante de la Tecnicatura Superior en Desarrollo de Software (TSDS), ISPC, Córdoba, Argentina.
-Full Stack Developer Jr en formación | [LinkedIn](www.linkedin.com/in/mariano-casarino) | [Portfolio](https://github.com/marian-casa)
+Full Stack Developer Jr en formación | [LinkedIn](https://www.linkedin.com/in/mariano-casarino) | [Portfolio](https://porfolio-mariano-casarino.vercel.app/)
 
 ## 📄 Licencia
 
