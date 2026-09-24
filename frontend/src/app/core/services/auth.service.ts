@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import {
   AccessTokenResponse,
   ChangePasswordRequest,
+  GoogleLoginRequest,
   LoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
@@ -81,6 +82,23 @@ export class AuthService {
 
   register(payload: RegisterRequest): Observable<User> {
     return this.http.post<User>(`${this.baseUrl}/register/`, payload);
+  }
+
+  /**
+   * POST /auth/google/ — inicia sesión con el id_token de Google Sign-In.
+   * El backend vincula por email: si la cuenta ya existe entra a esa misma
+   * cuenta y, si no es tuya una foto propia, sincroniza la de Google.
+   * Devuelve el mismo par access+refresh que el login normal.
+   */
+  googleLogin(payload: GoogleLoginRequest): Observable<AccessTokenResponse> {
+    return this.http
+      .post<AccessTokenResponse>(`${this.baseUrl}/google/`, payload)
+      .pipe(
+        tap(({ access, refresh }) => {
+          localStorage.setItem(ACCESS_TOKEN_KEY, access);
+          if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+        }),
+      );
   }
 
   /**

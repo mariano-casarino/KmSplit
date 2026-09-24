@@ -14,6 +14,14 @@ export interface RegisterRequest {
   password: string;
 }
 
+/** POST /auth/google/ — login (o alta) con la cuenta de Google. */
+export interface GoogleLoginRequest {
+  /** El id_token que devuelve Google Sign-In (GIS). */
+  credential: string;
+  /** "Recordarme": mantiene la sesión ~7 días deslizantes. */
+  remember?: boolean;
+}
+
 /** PUT /auth/me/ — edición de perfil (el email es solo lectura). */
 export interface ProfileUpdateRequest {
   /** Apodo: el nombre que se muestra en toda la app. */

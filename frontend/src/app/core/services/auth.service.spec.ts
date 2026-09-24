@@ -64,6 +64,21 @@ describe('AuthService', () => {
     req.flush(user);
   });
 
+  it('googleLogin() hace POST /google/ con el credential y guarda los tokens', () => {
+    service
+      .googleLogin({ credential: 'id-token-de-google', remember: true })
+      .subscribe();
+    const req = http.expectOne(`${authUrl}/google/`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      credential: 'id-token-de-google',
+      remember: true,
+    });
+    req.flush({ access: 'at-google', refresh: 'rt-google' });
+    expect(localStorage.getItem(ACCESS)).toBe('at-google');
+    expect(localStorage.getItem(REFRESH)).toBe('rt-google');
+  });
+
   it('fetchMe() cachea el usuario y no repite la request', () => {
     localStorage.setItem(ACCESS, 'at');
     service.fetchMe().subscribe((u) => expect(u.id).toBe(1));

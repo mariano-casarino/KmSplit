@@ -4,6 +4,51 @@
     <p class="login-tagline">Repartí el combustible, no las discusiones</p>
   </div>
 
+  @if (googleEnabled) {
+    <button
+      class="btn-google"
+      type="button"
+      (click)="loginWithGoogle()"
+      [disabled]="googleLoading() || loading() || lockoutSeconds() !== null"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 48 48"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          fill="#4285F4"
+          d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.68v5.55h7.11c4.16-3.83 6.56-9.47 6.56-16.24z"
+        />
+        <path
+          fill="#34A853"
+          d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.55c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.39v5.73C8.03 40.86 15.41 46 24 46z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M11.69 28.15c-.5-1.5-.79-3.1-.79-4.78s.29-3.28.79-4.78v-5.73H4.39A21.93 21.93 0 0 0 2 23.37c0 3.76.9 7.32 2.39 10.51h7.3v-5.73z"
+        />
+        <path
+          fill="#EA4335"
+          d="M24 10.78c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.41 2 8.03 7.21 4.39 14.86l7.3 5.73c1.73-5.19 6.58-9.81 12.31-9.81z"
+        />
+      </svg>
+      @if (googleLoading()) {
+        Ingresando con Google...
+      } @else {
+        Continuar con Google
+      }
+    </button>
+
+    @if (googleError()) {
+      <p class="field-error login-error">{{ googleError() }}</p>
+    }
+
+    <div class="login-divider"><span>o</span></div>
+  }
+
   <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
     <div>
       <input
