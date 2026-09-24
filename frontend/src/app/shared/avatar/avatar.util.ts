@@ -4,15 +4,20 @@
  * "identidad" de la app (DRY).
  */
 
-/** Colores sobrios, sacados de la paleta de la app (azules, verde y violeta
- * de styles.scss) para que el avatar se integre sin gritar. */
+/** Paleta de 10 colores dentro de la gama azul / celeste / verde / naranja:
+ * tonos de la misma familia pero lo bastante distintos a la vista como para
+ * que el gráfico del resumen y los avatares se lean de un tirón. */
 const PALETTE = [
-  '#2f6fed',
-  '#2f8e58',
-  '#8a63d2',
-  '#2e8b8b',
-  '#b0764a',
-  '#4b70a2',
+  '#2f6fed', // azul marca
+  '#1e9e5a', // verde
+  '#3153c4', // azul profundo
+  '#d0892b', // ámbar
+  '#1c9ad6', // azul cielo
+  '#c2571e', // naranja ladrillo
+  '#3ba7e0', // celeste
+  '#e3653a', // naranja encendido
+  '#0f9d8f', // verde azulado
+  '#7fb22c', // verde lima
 ];
 
 /** Iniciales: con nombre + apellido salen las dos primeras letras (una por
