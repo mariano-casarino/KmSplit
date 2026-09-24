@@ -158,6 +158,7 @@
             class="member-avatar"
             [display]="member.user_name"
             [photoUrl]="member.user_avatar"
+            [colorKey]="member.user"
             size="sm"
           />
           <div class="member-info">
@@ -230,6 +231,7 @@
           <app-avatar
             [display]="memberProfileDisplay(profile)"
             [photoUrl]="profile.avatar_url"
+            [colorKey]="member.user"
             size="lg"
           />
         </div>

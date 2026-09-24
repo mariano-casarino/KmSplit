@@ -10,7 +10,7 @@
   } @else if (user(); as user) {
     <div class="profile-photo">
       <label class="profile-avatar" [class.has-avatar]="!!user.avatar_url">
-        <app-avatar [display]="displayAvatar()" [photoUrl]="user.avatar_url" size="lg" />
+        <app-avatar [display]="displayAvatar()" [photoUrl]="user.avatar_url" [colorKey]="user.id" size="lg" />
         <input
           #avatarInput
           type="file"

@@ -13,6 +13,7 @@ import { VehicleService } from '../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
+import { avatarColor } from '../../shared/avatar/avatar.util';
 import { formatKm, formatMoney } from '../../core/utils/format-args';
 
 type PeriodKey = 'semana' | 'mes' | '3meses';
@@ -57,15 +58,6 @@ export class SummaryComponent implements OnInit {
   selectedPeriod = signal<PeriodKey>('semana');
 
   private periodDays: Record<PeriodKey, number> = { semana: 7, mes: 30, '3meses': 90 };
-  private colors = [
-    'var(--blue-400)',
-    'var(--green)',
-    'var(--amber)',
-    'var(--purple)',
-    'var(--gray-700)',
-    'var(--red-pink)',
-    'var(--blue-500)',
-  ];
 
   ngOnInit(): void {
     // dashboard() trae vehicle+group+trips+fuelLoads+settlements en 1 request;
@@ -187,14 +179,15 @@ export class SummaryComponent implements OnInit {
 
     const total = Array.from(kmByUser.values()).reduce((sum, km) => sum + km, 0);
 
-    return members.map((m, index) => {
+    return members.map((m) => {
       const km = kmByUser.get(m.user) ?? 0;
       return {
         userId: m.user,
         name: m.user_name,
         km,
         percentage: total > 0 ? Math.round((km / total) * 100) : 0,
-        color: this.colors[index % this.colors.length],
+        // mismo color que el avatar del integrante (estable por id de usuario)
+        color: avatarColor(String(m.user)),
       };
     });
   }
