@@ -200,6 +200,20 @@ SIMPLE_JWT = {
     "SIGNING_KEY": f"{config('SECRET_KEY')}:{config('RAILWAY_DEPLOYMENT_ID', default='local')}",
 }
 
+# ============================================================
+# Login con Google
+# GOOGLE_CLIENT_ID: identificador de la "Web application" OAuth creada en
+# https://console.cloud.google.com/apis/credentials. Vacío = botón oculto y
+# endpoint deshabilitado (comportamiento por default en desarrollo).
+# ============================================================
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+# Tolerancia de reloj (segundos) al verificar el id_token de Google. El token
+# nace con "nbf" = hora real y la librería solo aguanta 5s por defecto; los
+# contenedores de Docker suelen tener el reloj corrido unos segundos y eso
+# rompía el login ("Token used too early"). 60s no abre ninguna ventana de
+# abuso aprovechable (el token expira en 1 h).
+GOOGLE_CLOCK_SKEW_SECONDS = config("GOOGLE_CLOCK_SKEW_SECONDS", default=60, cast=int)
+
 
 # Correo (recuperación de contraseña)
 # En desarrollo (sin EMAIL_HOST_USER) se usa el backend de consola, que

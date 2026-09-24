@@ -42,6 +42,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Foto de perfil como data URI (base64), igual que la foto del vehículo.
     # Vacío = sin foto: la app muestra las iniciales del nombre y apellido.
     avatar_url = models.TextField(blank=True, default="")
+    # Foto de la cuenta de Google (URL de la imagen del perfil de Google).
+    # Se usa como "origen" de la foto: al entrar por Google, si el usuario no
+    # tiene foto propia (avatar_url vacío o todavía es la que vino de Google),
+    # se sincroniza la foto actual de Google; si la cambió en la app, se respeta.
+    google_picture = models.TextField(blank=True, default="")
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

@@ -66,6 +66,14 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         return validate_image_data_uri(value)
 
 
+class GoogleLoginSerializer(serializers.Serializer):
+    """POST /api/auth/google/ — recibe el id_token de Google Sign-In (GIS) y
+    valida que no venga vacío. La verificación criptográfica del token se hace
+    en la vista (id_token.verify_oauth2_token)."""
+
+    credential = serializers.CharField(trim_whitespace=True)
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     """POST /api/auth/change-password/ — requiere la contraseña actual y
     valida la nueva con los validadores de Django (largo, no común, no

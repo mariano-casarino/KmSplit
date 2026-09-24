@@ -18,10 +18,14 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from google.auth.transport import requests
+from google.oauth2 import id_token
+
 from core.mail import send_brevo_email
 from .models import PasswordReset, User
 from .serializers import (
     ChangePasswordSerializer,
+    GoogleLoginSerializer,
     ProfileUpdateSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -161,6 +165,130 @@ class LockedLoginView(TokenObtainPairView):
                 # el access token igual se devuelve en el body.
                 pass
 
+        return response
+
+
+class GoogleLoginView(APIView):
+    """
+    POST /api/auth/google/ — inicia sesión (o registra) con la cuenta de Google.
+
+    Body: {"credential": "<id_token de Google Sign-In>", "remember": true}
+
+    Flujo:
+      1. Si GOOGLE_CLIENT_ID no está configurado en el servidor -> 503.
+      2. Verifica criptográficamente el id_token (firma, audiencia, emisor).
+      3. Busca la cuenta por email. Si no existe, la crea (con la foto de
+         Google como avatar). Si existe, entra a esa MISMA cuenta y carga todo
+         lo que ya tenía (viajes, grupos, vehículos).
+      4. Sincroniza la foto de Google: solo sobrescribe avatar_url si el
+         usuario no tiene foto propia (vacía) o si la actual todavía es la que
+         vino de Google. Si la cambió dentro de la app, se respeta.
+      5. Emite el mismo par access+refresh (y cookie httpOnly) del login.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        client_id = settings.GOOGLE_CLIENT_ID
+        if not client_id:
+            return Response(
+                {"detail": "El login con Google no está habilitado en este servidor."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        serializer = GoogleLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            info = id_token.verify_oauth2_token(
+                serializer.validated_data["credential"],
+                requests.Request(),
+                client_id,
+                clock_skew_in_seconds=settings.GOOGLE_CLOCK_SKEW_SECONDS,
+            )
+        except ValueError as exc:
+            # La librería rechaza por varias razones: firma inválida, audiencia
+            # distinta a nuestro client_id, token vencido, issuer inesperado o
+            # reloj del servidor corrido ("Token used too early/late").
+            # Loggeamos el motivo para poder diagnosticar (sin revelarlo al
+            # usuario ni al frontend).
+            logger.warning("Login con Google rechazado (client_id=%s): %s", client_id, exc)
+            return Response(
+                {"detail": "La credencial de Google no es válida."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Rechazamos cuentas con email sin verificar: evita hacerse pasar por
+        # un email sin confirmar en Google.
+        if not info.get("email_verified"):
+            return Response(
+                {"detail": "Verificá tu email en Google para poder iniciar sesión."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = (info.get("email") or "").strip().lower()
+        if not email:
+            return Response(
+                {"detail": "La cuenta de Google no tiene email asociado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        picture = (info.get("picture") or "").strip()
+        # Solo URLs de imagen remotas. Nunca guardamos otra cosa en el avatar.
+        if not picture.startswith(("http://", "https://")):
+            picture = ""
+
+        google_name = (info.get("name") or info.get("given_name") or email.split("@")[0]).strip()
+        first_name = (info.get("given_name") or "").strip()
+        last_name = (info.get("family_name") or "").strip()
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user is None:
+            # Cuenta nueva creada desde Google (sin password: la clave que genera
+            # Django es inutilizable, el acceso es vía Google).
+            user = User.objects.create_user(
+                email=email,
+                name=google_name or first_name or "Usuario",
+                first_name=first_name,
+                last_name=last_name,
+                avatar_url=picture,
+                google_picture=picture,
+            )
+        else:
+            # Cuenta existente: se vincula por email y se actualizan los datos
+            # de Google que falten, respetando lo que el usuario tocó en la app.
+            fields = {}
+            prev_picture = user.google_picture
+            if picture and picture != prev_picture:
+                fields["google_picture"] = picture
+                # la foto mostrada solo se pisa si no hay una foto propia o si
+                # la actual es todavía la foto que vino de Google
+                if not user.avatar_url or user.avatar_url == prev_picture:
+                    fields["avatar_url"] = picture
+            if not user.name:
+                fields["name"] = google_name or first_name or "Usuario"
+            if not user.first_name:
+                fields["first_name"] = first_name
+            if not user.last_name:
+                fields["last_name"] = last_name
+            if fields:
+                for key, value in fields.items():
+                    setattr(user, key, value)
+                user.save(update_fields=list(fields))
+
+        remember = _parse_remember(request.data.get("remember", True))
+        refresh = RefreshToken.for_user(user)
+        refresh["kmsplit_remember"] = remember
+        response = Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        })
+        try:
+            _set_refresh_cookie(response, str(refresh), remember=remember)
+        except Exception:
+            # nunca dejamos que un fallo al setear la cookie tumbe el login:
+            # el access token igual se devuelve en el body.
+            pass
         return response
 
 
