@@ -179,7 +179,8 @@ Para este proyecto se diseñó el Modelo Relacional utilizando dbdiagram.io, una
 - [x] Lógica de liquidación/reparto
 - [x] Frontend mobile-first
 - [x] Deploy
-- [ ] Funcionalidades extra (login con google, invitar por link, exportar PDF)
+- [x] Login con Google (foto de perfil sincronizada)
+- [ ] Funcionalidades extra (invitar por link, exportar PDF)
 
 ## 👤 Autor
 
