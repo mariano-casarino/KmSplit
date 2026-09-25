@@ -2,43 +2,38 @@ import { Injectable } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential?: string; error?: string }) => void;
-            auto_select?: boolean;
-            ux_mode?: 'popup' | 'redirect';
-            cancel_on_tap_outside?: boolean;
-          }) => void;
-          prompt: (listener?: (notification: PromptNotification) => void) => void;
-        };
-      };
-    };
-  }
-}
+const CSRF_COOKIE = 'g_csrf_token';
+const RESULT_KEY = 'kmsplit_google_credential';
+const NONCE_KEY = 'kmsplit_google_nonce';
+const POPUP_W = 480;
+const POPUP_H = 620;
+const WAIT_MS = 120_000;
 
-interface PromptNotification {
-  getMomentType: () => string;
-  isNotDisplayed: () => boolean;
-  isSkippedMoment: () => boolean;
-  isDismissedMoment: () => boolean;
-}
+/** Token aleatorio para el doble envío g_csrf_token (cookie + query). */
+const randomToken = (): string => {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('');
+};
 
 /**
- * Wrapper fino sobre Google Identity Services (GIS).
+ * Login con Google sin Google Identity Services (GIS).
  *
- * Carga el script de Google bajo demanda, e inicia sesión en un popup con
- * `ux_mode: 'popup'`. Resuelve con el id_token que después se manda al
- * backend (POST /api/auth/google/), que es quien verifica la firma.
+ * GIS en mobile/iOS muestra el One Tap (la notificación inferior) y su popup
+ * pierde el callback al volver, dejando el botón "cargando" o "sesión
+ * expiró". Acá abrimos el flujo de autorización de Google directamente con
+ * `window.open`:
+ *   - desktop: ventana emergente real, centrada en la pantalla;
+ *   - móvil: Safari/Chrome abre una pestaña nueva (iOS no permite ventanas
+ *     centradas: es imposible evitarlo);
+ *   - al volver, Google redirige a la ruta dedicada `/google/auth` con el
+ *     `#credential` en la URL; esa página valida el g_csrf_token (evita
+ *     login-CSRF), guarda la credencial en `localStorage` y se cierra. El
+ *     flujo original la detecta y continúa — funciona sin importar de qué
+ *     pestaña se vuelva.
  */
 @Injectable({ providedIn: 'root' })
 export class GoogleAuthService {
-  private scriptPromise: Promise<void> | null = null;
-
   /** Client ID de la "Web application", tomado de environments. */
   get clientId(): string {
     return environment.googleClientId;
@@ -49,111 +44,107 @@ export class GoogleAuthService {
     return !!this.clientId;
   }
 
-  private loadScript(): Promise<void> {
-    if (this.scriptPromise) return this.scriptPromise;
-    if (window.google?.accounts?.id) {
-      this.scriptPromise = Promise.resolve();
-      return this.scriptPromise;
-    }
-    this.scriptPromise = new Promise<void>((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => resolve();
-      script.onerror = () => {
-        this.scriptPromise = null;
-        reject(new Error('No se pudo cargar Google Sign-In.'));
-      };
-      document.head.appendChild(script);
-    });
-    return this.scriptPromise;
-  }
-
   /**
-   * Abre el popup de Google (requiere un gesto del usuario) y resuelve con el
-   * id_token. Rechaza si el usuario cancela o cierra el popup.
-   *
-   * Garantiza siempre un desenlace: además de los casos de éxito/cancelación,
-   * maneja las notificaciones de prompt de GIS (popup no mostrado, momento
-   * saltado) y un timeout de seguridad, para que el botón jamás quede
-   * girando indefinidamente.
+   * Abre la ventana/pestaña de Google (requiere un gesto del usuario) y
+   * resuelve con el id_token cuando la pestaña vuelve. Rechaza con un mensaje
+   * claro si el popup se bloquea, se cancela o si Google tarda demasiado
+   * (nunca queda cargando para siempre).
    */
   signIn(): Promise<string> {
     if (!this.enabled) {
       return Promise.reject(new Error('Google no está configurado.'));
     }
 
-    return this.loadScript().then(
-      () =>
-        new Promise<string>((resolve, reject) => {
-          let settled = false;
-          let timeout: ReturnType<typeof setTimeout> | undefined;
-          const g = window.google!.accounts.id;
+    const built = this.buildAuthUrl();
+    if (!built) {
+      return Promise.reject(new Error('Google no está configurado.'));
+    }
 
-          const finish = (fn: () => void) => {
-            if (settled) return;
-            settled = true;
-            if (timeout) clearTimeout(timeout);
-            fn();
-          };
+    const { url, csrf, nonce } = built;
+    document.cookie = `${CSRF_COOKIE}=${csrf}; path=/; Max-Age=600; SameSite=Lax`;
+    // El nonce viaja en el id_token; la página de vuelta lo valida contra este
+    // valor para descartar tokens de intentos ajenos o viejos. Se guarda en
+    // localStorage porque la vuelta ocurre en otra pestaña (sessionStorage es
+    // por pestaña y no se comparte).
+    localStorage.setItem(NONCE_KEY, nonce);
+    // Limpia restos de una vuelta anterior que no se consumieron.
+    localStorage.removeItem(RESULT_KEY);
 
-          // Red de seguridad: aunque GIS no notifique nada, nunca quedamos
-          // cargando para siempre.
-          timeout = setTimeout(() => {
-            finish(() =>
-              reject(
-                new Error('Google tardó demasiado en responder. Intentá de nuevo.'),
-              ),
-            );
-          }, 120_000);
-
-          g.initialize({
-            client_id: this.clientId,
-            auto_select: false,
-            ux_mode: 'popup',
-            cancel_on_tap_outside: true,
-            callback: (response) => {
-              const credential = response.credential;
-              if (credential) {
-                finish(() => resolve(credential));
-              } else if (response.error) {
-                finish(() =>
-                  reject(new Error('El inicio de sesión con Google fue cancelado.')),
-                );
-              } else {
-                // Popup cerrado sin credencial ni error: no hay nada que validar.
-                finish(() =>
-                  reject(new Error('Google cerró el popup sin completar el inicio de sesión.')),
-                );
-              }
-            },
-          });
-
-          g.prompt((notification) => {
-            if (notification.isNotDisplayed()) {
-              // P. ej. el origen no está autorizado en Google Console o el
-              // navegador bloqueó el popup.
-              finish(() =>
-                reject(
-                  new Error(
-                    'Google no pudo abrir el inicio de sesión. Verificá que este sitio esté autorizado en la consola de Google.',
-                  ),
-                ),
-              );
-            } else if (notification.isSkippedMoment()) {
-              finish(() =>
-                reject(
-                  new Error('Google omitió el inicio de sesión. Intentá de nuevo.'),
-                ),
-              );
-            } else if (notification.isDismissedMoment()) {
-              finish(() =>
-                reject(new Error('El inicio de sesión con Google fue cancelado.')),
-              );
-            }
-          });
-        }),
+    const left = Math.round((screen.availWidth - POPUP_W) / 2);
+    const top = Math.round((screen.availHeight - POPUP_H) / 2);
+    const win = window.open(
+      url,
+      'kmsplit_google',
+      `width=${POPUP_W},height=${POPUP_H},left=${left},top=${top}`,
     );
+
+    return new Promise<string>((resolve, reject) => {
+      if (!win) {
+        reject(
+          new Error(
+            'El navegador bloqueó la ventana de Google. Permití las ventanas emergentes e intentá de nuevo.',
+          ),
+        );
+        return;
+      }
+
+      let settled = false;
+      let timer: ReturnType<typeof setInterval> | undefined;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
+      const finish = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        if (timer) clearInterval(timer);
+        if (timeout) clearTimeout(timeout);
+        fn();
+      };
+
+      // La pestaña de vuelta deja la credencial en localStorage (mismo origen),
+      // así funciona aunque hayamos perdido la referencia a la ventana.
+      timer = setInterval(() => {
+        const raw = localStorage.getItem(RESULT_KEY);
+        if (raw) {
+          localStorage.removeItem(RESULT_KEY);
+          try {
+            const credential = (JSON.parse(raw) as { credential: string }).credential;
+            finish(() => resolve(credential));
+          } catch {
+            finish(() => reject(new Error('Google no respondió correctamente.')));
+          }
+        } else if (win.closed) {
+          finish(() =>
+            reject(new Error('El inicio de sesión con Google fue cancelado.')),
+          );
+        }
+      }, 350);
+
+      timeout = setTimeout(() => {
+        finish(() =>
+          reject(new Error('Google tardó demasiado en responder. Intentá de nuevo.')),
+        );
+      }, WAIT_MS);
+    });
+  }
+
+  private buildAuthUrl(): { url: string; csrf: string; nonce: string } | null {
+    const redirectUri = `${location.origin}/google/auth`;
+    const csrf = randomToken();
+    const nonce = randomToken();
+    const params = new URLSearchParams({
+      client_id: this.clientId,
+      redirect_uri: redirectUri,
+      response_type: 'id_token',
+      scope: 'openid email profile',
+      flowName: 'GeneralOAuthFlow',
+      ux_mode: 'redirect',
+      g_csrf_token: csrf,
+      nonce,
+    });
+    return {
+      url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+      csrf,
+      nonce,
+    };
   }
 }

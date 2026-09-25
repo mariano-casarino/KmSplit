@@ -64,6 +64,14 @@ export const routes: Routes = [
   },
 
   {
+    path: 'google/auth',
+    loadComponent: () =>
+      import('./features/auth/google-auth-return/google-auth-return.component').then(
+        (m) => m.GoogleAuthReturnComponent,
+      ),
+  },
+
+  {
     path: 'vehiculos',
     canActivate: [authGuard],
     loadComponent: () =>
