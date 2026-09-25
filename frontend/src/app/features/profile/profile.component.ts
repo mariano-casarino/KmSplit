@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,7 +25,12 @@ export class ProfileComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private groups = inject(GroupService);
+
+  /** Desde dónde se abrió el perfil: 'grupos' (selector) o 'vehiculos' (dentro
+   *  de un grupo). Determina a dónde vuelve el botón de atrás. */
+  private readonly from = this.route.snapshot.queryParamMap.get('from') ?? 'grupos';
 
   user = signal<User | null>(this.auth.getCurrentUser());
   loading = signal(this.user() === null);
@@ -80,6 +85,13 @@ export class ProfileComponent {
     } else {
       this.patchProfileForm(this.user()!);
     }
+  }
+
+  /** Dónde vuelve el botón de atrás según dónde se abrió el perfil. */
+  backRoute(): (string | number)[] {
+    return this.from === 'vehiculos'
+      ? ['/vehiculos']
+      : ['/grupos', 'selector'];
   }
 
   private patchProfileForm(user: User): void {

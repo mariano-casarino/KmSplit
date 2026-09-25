@@ -2,7 +2,7 @@
   <div class="group-header">
     <h1>¿Dónde vamos a cargar tus km hoy?</h1>
     <div class="auth-actions">
-      <a class="icon-btn" routerLink="/perfil" aria-label="Ver mi perfil">
+      <a class="icon-btn" routerLink="/perfil" [queryParams]="{ from: 'grupos' }" aria-label="Ver mi perfil">
         <svg
           width="20"
           height="20"

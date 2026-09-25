@@ -24,7 +24,7 @@
       </svg>
     </button>
     <h1>{{ group()?.name ?? 'Vehículos' }}</h1>
-    <a class="icon-btn" routerLink="/perfil" aria-label="Ver mi perfil">
+    <a class="icon-btn" routerLink="/perfil" [queryParams]="{ from: 'vehiculos' }" aria-label="Ver mi perfil">
       <svg
         width="20"
         height="20"
