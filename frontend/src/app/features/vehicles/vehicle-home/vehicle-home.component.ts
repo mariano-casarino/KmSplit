@@ -11,13 +11,21 @@ import { VehicleService } from '../../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
+import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 import { fileToCompressedDataUri } from '../../../shared/utils/image.util';
 import { retryTransient } from '../../../shared/utils/retry-transient.util';
 
 @Component({
   selector: 'app-vehicle-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    BottomNavComponent,
+    ArgNumberPipe,
+    BackButtonComponent,
+    NotificationsBellComponent,
+  ],
   templateUrl: './vehicle-home.component.html',
   styleUrl: './vehicle-home.component.scss',
 })

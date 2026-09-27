@@ -1,0 +1,65 @@
+<div class="bell" [class.open]="open()">
+  <button
+    class="icon-btn bell-button"
+    type="button"
+    (click)="toggle()"
+    [attr.aria-label]="unreadCount() > 0 ? unreadCount() + ' notificaciones sin leer' : 'Notificaciones'"
+  >
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+    @if (unreadCount() > 0) {
+      <span class="bell-badge">{{ displayCount() }}</span>
+    }
+  </button>
+
+  @if (open()) {
+    <span class="bell-backdrop" (click)="close()"></span>
+    <div class="bell-panel" role="dialog" aria-label="Notificaciones">
+      <div class="panel-head">
+        <span class="panel-title">Notificaciones</span>
+        @if (unreadCount() > 0) {
+          <button class="panel-markall" type="button" (click)="markAllRead()">
+            Marcar todas
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="muted panel-state">Cargando...</p>
+      } @else if (items().length === 0) {
+        <p class="muted panel-state">Nada nuevo por acá.</p>
+      } @else {
+        <ul class="panel-list">
+          @for (item of items(); track item.id) {
+            <li
+              class="notif-item"
+              [class.unread]="!item.is_read"
+              (click)="openItem(item)"
+            >
+              <span class="notif-icon">{{ item.kind === 'fuel' ? '⛽' : '📍' }}</span>
+              <span class="notif-body">
+                <span class="notif-msg">{{ item.message }}</span>
+                <span class="notif-time">{{ item.created_at | date: 'dd/MM · HH:mm' }}</span>
+              </span>
+              @if (!item.is_read) {
+                <span class="notif-dot" aria-hidden="true"></span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

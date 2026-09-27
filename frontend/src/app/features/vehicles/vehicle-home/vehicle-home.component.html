@@ -2,7 +2,9 @@
   <div class="screen-header">
     <app-back-button link="/vehiculos" />
     <h1>{{ vehicle()?.name ?? 'Vehículo' }}</h1>
-    <a class="icon-btn" [routerLink]="['/vehiculo', vehicleId, 'admin']" aria-label="Configuración">
+    <span class="header-actions">
+      <app-notifications-bell />
+      <a class="icon-btn" [routerLink]="['/vehiculo', vehicleId, 'admin']" aria-label="Configuración">
       <svg
         width="20"
         height="20"
@@ -20,6 +22,7 @@
         ></path>
       </svg>
     </a>
+    </span>
   </div>
 
   @if (loading()) {
