@@ -5,6 +5,7 @@ from .models import (
     Group,
     GroupInvitation,
     GroupMembership,
+    Notification,
     Settlement,
     SettlementDetail,
     Trip,
@@ -66,3 +67,9 @@ class SettlementAdmin(admin.ModelAdmin):
     )
     list_filter = ("vehicle", "status")
     inlines = [SettlementDetailInline]
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("recipient", "kind", "actor", "message", "is_read", "created_at")
+    list_filter = ("kind", "is_read", "recipient")

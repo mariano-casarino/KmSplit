@@ -2,7 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.cache import cache
 
-from .models import FuelLoad, GroupMembership, Settlement, SettlementDetail, Trip
+from .models import FuelLoad, GroupMembership, Notification, Settlement, SettlementDetail, Trip
 
 DASHBOARD_CACHE_TTL = 300
 
@@ -15,6 +15,31 @@ def invalidate_vehicle_dashboard(vehicle_id):
     """Invalida la cache del payload del dashboard cuando cambian sus datos
     (viajes, cargas, liquidaciones o miembros del grupo)."""
     cache.delete(dashboard_cache_key(vehicle_id))
+
+
+def notify_members(actor, vehicle, kind, message, link=""):
+    """Crea una Notification para todos los integrantes ACTIVOS del grupo del
+    vehículo, salvo el actor. No se notifica al propio autor (ya vio la
+    acción) ni a miembros dados de baja. No hace nada si el actor es el único
+    integrante."""
+    members = (
+        GroupMembership.objects.filter(group_id=vehicle.group_id, is_active=True)
+        .exclude(user=actor)
+        .select_related("user")
+    )
+    notifications = [
+        Notification(
+            recipient=m.user,
+            actor=actor,
+            vehicle=vehicle,
+            kind=kind,
+            message=message,
+            link=link,
+        )
+        for m in members
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
 
 
 def _quantize(value):

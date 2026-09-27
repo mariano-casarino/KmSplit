@@ -8,13 +8,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 
-from .models import FuelLoad, Group, GroupMembership, Settlement, Trip, Vehicle
+from .models import FuelLoad, Group, GroupMembership, Notification, Settlement, Trip, Vehicle
 from .permissions import CanEditFuelLoad, CanEditTrip, get_membership
 from .serializers import (
     FuelLoadSerializer,
     GroupMembershipSerializer,
     GroupSerializer,
     JoinGroupSerializer,
+    NotificationSerializer,
     SettlementSerializer,
     TripSerializer,
     VehicleSerializer,
@@ -258,6 +259,19 @@ class TripViewSet(viewsets.ModelViewSet):
         trip = serializer.save(user=self.request.user)
         services.assign_and_recalculate_trip(trip)
         services.invalidate_vehicle_dashboard(trip.vehicle_id)
+        # Las operaciones de autocommit de Django no dejan transacción abierta,
+        # así que el aviso se crea enseguida (sin on_commit: ese callback no
+        # corre dentro de una transacción de test, que se revierte al final).
+        services.notify_members(
+            actor=self.request.user,
+            vehicle=trip.vehicle,
+            kind="trip",
+            message=(
+                f"{self.request.user.name} registró un viaje de "
+                f"{trip.km_traveled} km el {trip.trip_date:%d/%m}."
+            ),
+            link=f"/vehiculo/{trip.vehicle_id}/historial",
+        )
 
     def perform_update(self, serializer):
         trip = serializer.save(edited_by=self.request.user)
@@ -289,6 +303,16 @@ class FuelLoadViewSet(viewsets.ModelViewSet):
         fuel_load = serializer.save(loaded_by=self.request.user)
         services.create_settlement_for_fuel_load(fuel_load)
         services.invalidate_vehicle_dashboard(fuel_load.vehicle_id)
+        services.notify_members(
+            actor=self.request.user,
+            vehicle=fuel_load.vehicle,
+            kind="fuel",
+            message=(
+                f"{self.request.user.name} cargó ${fuel_load.amount} de "
+                f"combustible. Hay un resumen nuevo."
+            ),
+            link=f"/vehiculo/{fuel_load.vehicle_id}/resumen",
+        )
         return fuel_load
 
     def perform_update(self, serializer):
@@ -340,3 +364,38 @@ class SettlementViewSet(viewsets.ReadOnlyModelViewSet):
         settlement.save()
         services.invalidate_vehicle_dashboard(settlement.vehicle_id)
         return Response(SettlementSerializer(settlement).data)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """Notificaciones in-app del usuario (todo scoped a request.user:
+    nadie puede leer ni marcar las de otro)."""
+
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        limit = min(int(request.query_params.get("limit", 20)), 50)
+        queryset = self.get_queryset()[:limit]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="unread_count")
+    def unread_count(self, request, *args, **kwargs):
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({"count": count})
+
+    @action(detail=True, methods=["post"], url_path="read")
+    def mark_read(self, request, pk=None, *args, **kwargs):
+        notification = self.get_object()
+        if not notification.is_read:
+            notification.is_read = True
+            notification.save(update_fields=["is_read"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"], url_path="read_all")
+    def mark_all_read(self, request, *args, **kwargs):
+        self.get_queryset().filter(is_read=False).update(is_read=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)

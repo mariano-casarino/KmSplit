@@ -4,6 +4,7 @@ from .models import (
     FuelLoad,
     Group,
     GroupMembership,
+    Notification,
     Settlement,
     SettlementDetail,
     Trip,
@@ -148,6 +149,21 @@ class FuelLoadSerializer(serializers.ModelSerializer):
         if value <= base_km:
             raise serializers.ValidationError(message)
         return value
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    actor_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id", "kind", "actor_name", "message", "link",
+            "is_read", "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_actor_name(self, obj):
+        return obj.actor.name if obj.actor else ""
 
 
 class SettlementDetailSerializer(serializers.ModelSerializer):

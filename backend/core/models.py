@@ -230,3 +230,53 @@ class SettlementDetail(models.Model):
 
     def __str__(self):
         return f"{self.user} debe ${self.amount_owed} en {self.settlement}"
+
+
+class Notification(models.Model):
+    """Alerta in-app: alguien registró un viaje o cargó combustible en un
+    vehículo de un grupo compartido. El frontend las muestra con el badge y
+    el panel de la campana."""
+
+    KIND_CHOICES = [
+        ("trip", "Viaje"),
+        ("fuel", "Carga de combustible"),
+    ]
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text="Quién hizo la acción (null si la cuenta se eliminó)",
+    )
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    message = models.CharField(max_length=255)
+    link = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Ruta del frontend a la que lleva al tocar la notificación",
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "is_read"]),
+            models.Index(fields=["recipient", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.kind} para {self.recipient} - {self.message}"
