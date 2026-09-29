@@ -33,7 +33,7 @@
         </div>
         @if (hasMoreGaps) {
           <button class="gap-toggle" type="button" (click)="toggleAllGaps()">
-            {{ showAllGaps() ? 'Ver menos ▴' : 'Ver ' + remainingGaps + ' huecos más ▾' }}
+            {{ showAllGaps() ? 'Ver menos ▴' : 'Ver ' + remainingGaps + ' más ▾' }}
           </button>
         }
       </div>
@@ -60,6 +60,9 @@
             class="record-row"
             type="button"
             [class.clickable]="record.clickable"
+            [class.gap-after]="gapAfterIds().has(record.id)"
+            [class.highlighted]="record.id === highlightedKey()"
+            [id]="'record-' + record.id"
             [disabled]="!record.clickable"
             (click)="onRecordClick(record)"
           >

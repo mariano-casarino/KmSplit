@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -14,6 +14,16 @@ import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component
 import { ArgNumberPipe } from '../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { formatKm, formatMoney } from '../../core/utils/format-args';
+import {
+  createFlashHighlight,
+  idsWithUnregisteredGap,
+  parseHighlightRequest,
+  recordKey,
+  recordViewSegments,
+  recordViewToOpen,
+  resolveHighlightKey,
+  type RecordView,
+} from '../../core/utils/records';
 
 type FilterKey = 'todos' | 'viajes' | 'cargas';
 
@@ -52,14 +62,14 @@ const STALE_PERIOD_DAYS = 14;
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
 })
-export class HistoryComponent implements OnInit {
+export class HistoryComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private vehicleService = inject(VehicleService);
   private auth = inject(AuthService);
 
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
-  scope: 'week' | 'full' = (this.route.snapshot.data['scope'] as 'week' | 'full') ?? 'full';
+  scope: RecordView = (this.route.snapshot.data['scope'] as RecordView) ?? 'full';
 
   vehicle = signal<Vehicle | null>(null);
   group = signal<Group | null>(null);
@@ -73,10 +83,30 @@ export class HistoryComponent implements OnInit {
   /** Muestra los 3 primeros huecos; al pulsar "ver más" se despliegan todos. */
   showAllGaps = signal(false);
 
+  /** Resaltado temporal del registro al que se llegó desde una notificación
+   *  (?highlight=trip-12): se enciende y se apaga solo. Al apagarse saca el
+   *  ?highlight de la URL, para que tocar dos veces la misma notificación
+   *  vuelva a encenderlo. */
+  private readonly flashHighlight = createFlashHighlight(() => this.dropHighlightParam());
+  readonly highlightedKey = this.flashHighlight.highlightedKey;
+  private highlight: string | null = this.route.snapshot.queryParamMap.get('highlight');
+
+  /** Ids de los registros cuyo separador inferior tiene km sin registrar:
+   *  esa línea de la lista se pinta de naranja. */
+  readonly gapAfterIds = signal<Set<string>>(new Set());
+
   private currentUserId = 0;
   private currentUserRole = signal<GroupRole | null>(null);
 
   ngOnInit(): void {
+    // Si ya estamos en el historial y se toca otra notificación, Angular
+    // reutiliza esta misma instancia (misma ruta, distinto query param): hay
+    // que volver a resolver el resaltado en cada cambio de ?highlight.
+    this.route.queryParamMap.subscribe((params) => {
+      this.highlight = params.get('highlight');
+      if (!this.loading()) this.resolveHighlight();
+    });
+
     // dashboard() trae vehicle+group+trips+fuelLoads+settlements en 1 request.
     // fetchMe es resiliente: si falla, el historial igual se muestra.
     forkJoin({
@@ -100,13 +130,19 @@ export class HistoryComponent implements OnInit {
           ? group.members.find((m) => m.user === user.id)
           : undefined;
         this.currentUserRole.set(membership?.role ?? null);
+        this.computeGapAfterIds();
         this.loading.set(false);
+        this.resolveHighlight();
       },
       error: () => {
         this.errorMessage.set('No pudimos cargar el historial.');
         this.loading.set(false);
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.flashHighlight.clear();
   }
 
   get title(): string {
@@ -120,7 +156,7 @@ export class HistoryComponent implements OnInit {
     const tripRecords: HistoryRecord[] = this.trips()
       .filter((t) => !cutoffStr || t.trip_date >= cutoffStr)
       .map((t) => ({
-        id: `trip-${t.id}`,
+        id: recordKey('trip', t.id),
         date: t.trip_date,
         sortKey: t.start_km,
         type: 'trip' as const,
@@ -136,13 +172,13 @@ export class HistoryComponent implements OnInit {
       .map((f) => {
         const settlementId = this.fuelLoadToSettlement().get(f.id);
         return {
-          id: `fuel-${f.id}`,
+          id: recordKey('fuel', f.id),
           date: f.load_date,
           sortKey: f.odometer_km,
           type: 'fuel' as const,
           userName: this.memberName(f.loaded_by),
-        userId: f.loaded_by,
-        label: `$${formatMoney(f.amount)}`,
+          userId: f.loaded_by,
+          label: `$${formatMoney(f.amount)}`,
           settlementId,
           clickable: !!settlementId,
         };
@@ -324,6 +360,75 @@ export class HistoryComponent implements OnInit {
     } else if (record.type === 'fuel' && record.settlementId) {
       this.router.navigate(['/vehiculo', this.vehicleId, 'liquidacion', record.settlementId]);
     }
+  }
+
+  /**
+   * Al llegar desde una notificación (?highlight=trip-12) se resalta ese
+   * registro. En "últimos 7 días" puede no estar (si es más viejo): en ese caso
+   * bajamos al historial completo, que es el último escalón. Si ya estamos en
+   * el historial completo y tampoco aparece (fue borrado), no hay a dónde ir.
+   */
+  private resolveHighlight(): void {
+    const request = parseHighlightRequest(this.highlight);
+    if (!request) {
+      this.flashHighlight.clear();
+      return;
+    }
+
+    const key = resolveHighlightKey(request, this.records);
+    if (key) {
+      this.flashHighlight.flash(key);
+      this.scrollToRecord(key);
+      return;
+    }
+
+    const next = recordViewToOpen(this.scope, false);
+    if (next !== this.scope) {
+      this.router.navigate(recordViewSegments(this.vehicleId, next), {
+        queryParams: { highlight: this.highlight },
+      });
+    }
+  }
+
+  private scrollToRecord(key: string): void {
+    // un tick después de pintar la fila, para que el DOM ya la tenga
+    setTimeout(() => {
+      document
+        .getElementById(`record-${key}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  /** Saca el ?highlight de la URL (sin pilinga) cuando el resalte ya se
+   *  apagó. Así, si se toca otra vez la misma notificación, el param cambia y
+   *  el resalte se repite. */
+  private dropHighlightParam(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { highlight: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  /** Marca qué separadores de la lista tienen km sin registrar en el medio.
+   *  Se calcula sobre TODOS los registros (no los filtrados), así la línea
+   *  naranja no cambia al cambiar de pestaña. */
+  private computeGapAfterIds(): void {
+    this.gapAfterIds.set(
+      idsWithUnregisteredGap([
+        ...this.trips().map((t) => ({
+          id: recordKey('trip', t.id),
+          minKm: t.start_km,
+          maxKm: t.end_km,
+        })),
+        ...this.fuelLoads().map((f) => ({
+          id: recordKey('fuel', f.id),
+          minKm: f.odometer_km,
+          maxKm: f.odometer_km,
+        })),
+      ]),
+    );
   }
 
   private sevenDaysAgo(): string {

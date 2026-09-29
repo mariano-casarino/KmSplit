@@ -41,6 +41,11 @@
 }
 
 .record-row {
+  position: relative;
+  /* contexto de apilado propio: así la capa de fondo de abajo (::before, con
+     z-index -1) queda entre el fondo de la fila y el contenido, sin colarse
+     detrás del fondo de la página */
+  z-index: 0;
   width: 100%;
   display: flex;
   align-items: center;
@@ -63,16 +68,74 @@
 
   &.clickable {
     cursor: pointer;
-
-    &:hover {
-      background: var(--gray-100);
-      margin: 0 -12px;
-      padding: 11px 12px;
-    }
   }
 
   &:disabled {
     opacity: 1;
+  }
+
+  /* La línea que divide dos registros y tiene km sin registrar en el medio se
+     dibuja aparte: 1px y con margen a los costados, así no engrosa el
+     separador ni mueve nada del layout de la fila. */
+  &.gap-after {
+    border-bottom-color: transparent;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 0;
+      height: 1px;
+      background: var(--amber);
+    }
+  }
+
+  /* Capa de fondo de la fila (::before, z-index -1 para quedar detrás del
+     texto y del lápiz). Los left/right negativos la extienden hasta el borde
+     de la caja --su padding es de 12px-- sin tocar el layout: antes el hover
+     corría la fila con margin negativo + padding, y con box-sizing:border-box
+     el padding se comía el ancho, así que el lápiz se iba 12px a la
+     izquierda. Como la lista recorta con overflow:hidden, la capa respeta el
+     borde redondeado de la caja. */
+  &::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: 0;
+    bottom: 0;
+    z-index: -1;
+    background: var(--gray-100);
+    opacity: 0;
+    pointer-events: none;
+    /* el hover entra rápido; el apagado del resalte, progresivo */
+    transition: opacity 0.45s ease;
+  }
+
+  &.clickable:hover:not(.highlighted)::before {
+    opacity: 1;
+    transition-duration: 0.15s;
+  }
+
+  /* Fila a la que se llegó desde una notificación: celeste en toda la fila,
+     más la barrita en el borde izquierdo de la caja. */
+  &.highlighted::before {
+    background: linear-gradient(
+      to right,
+      var(--blue-500) 0 3px,
+      var(--blue-100) 3px
+    );
+    opacity: 1;
+  }
+}
+
+/* El badge va en blanco para que se lea sobre el celeste. Va fuera del bloque
+   de arriba para ganarle al :hover de las clickeables. */
+.record-row.highlighted,
+.record-row.highlighted:hover {
+  .badge {
+    background: var(--white);
   }
 }
 
@@ -81,6 +144,14 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
+  min-width: 0;
+
+  /* el texto largo se recorta antes de empujar el ícono de editar */
+  .muted {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .badge {
@@ -100,6 +171,7 @@
 .edit-hint {
   font-size: 13px;
   opacity: 0.6;
+  flex-shrink: 0;
 }
 
 /* --- Sección de km sin registrar --- */
