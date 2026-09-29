@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 from rest_framework.test import APIClient
 
-from core.models import Trip
+from core.models import FuelLoad, Trip
 
 pytestmark = pytest.mark.django_db
 
@@ -240,6 +240,31 @@ class TestFuelLoadTriggersSettlement:
         })
         assert response.status_code == 200
         assert response.data["odometer_km"] == 1100
+
+    def test_edit_last_fuel_load_saves_the_date(self, family, vehicle):
+        """Editar la fecha de la carga tiene que quedar guardada (y reflejada
+        en el GET following y en la liquidación)."""
+        client = auth_client(family["owner"])
+        created = client.post("/api/fuel-loads/", {
+            "vehicle": vehicle.id, "load_date": "2026-07-02",
+            "odometer_km": 1100, "amount": "5000.00",
+        })
+        fuel_load_id = created.data["id"]
+        assert created.data["load_date"] == "2026-07-02"
+
+        response = client.patch(
+            f"/api/fuel-loads/{fuel_load_id}/",
+            {"load_date": "2026-07-05", "odometer_km": 1100, "amount": "5000.00"},
+        )
+        assert response.status_code == 200, response.data
+        assert response.data["load_date"] == "2026-07-05"
+
+        # follow-up: tampoco es un problema de la respuesta sino de la DB
+        fuel_load = FuelLoad.objects.get(pk=fuel_load_id)
+        assert str(fuel_load.load_date) == "2026-07-05"
+
+        reread = client.get(f"/api/fuel-loads/{fuel_load_id}/")
+        assert reread.data["load_date"] == "2026-07-05"
 
     def test_edit_last_fuel_load_rejects_below_period_start(self, family, vehicle):
         """No se puede bajar el odómetro por debajo del inicio de la liquidación."""
