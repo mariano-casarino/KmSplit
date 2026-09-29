@@ -1,0 +1,82 @@
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.notif-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--white);
+  transition: background 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--gray-100);
+  }
+
+  /* sin leer: fondo celeste suave, para distinguirlas de un vistazo */
+  &.unread {
+    background: var(--blue-100);
+
+    &:hover {
+      background: var(--blue-100);
+    }
+  }
+}
+
+.notif-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-msg {
+  font-size: 13.5px;
+  color: var(--gray-900);
+  line-height: 1.35;
+}
+
+.notif-time {
+  font-size: 11.5px;
+  color: var(--gray-500);
+}
+
+.notif-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--blue-500);
+}
+
+.load-more {
+  width: 100%;
+  margin-top: 12px;
+}

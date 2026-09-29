@@ -1,12 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy, inject } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Notification, UnreadCount } from '../models/notification.model';
 
 export const POLL_INTERVAL_MS = 60_000;
-const LIST_LIMIT = 20;
+/** Cuántas trae el panel de la campana. */
+export const PANEL_LIMIT = 20;
+/** Cuántas trae por tanda la vista de notificaciones ("ver todas"). */
+export const PAGE_LIMIT = 25;
 
 /**
  * Estado de las notificaciones in-app del usuario logueado.
@@ -71,24 +74,37 @@ export class NotificationService implements OnDestroy {
       .subscribe({ next: ({ count }) => this.unreadCountSubject.next(count) });
   }
 
-  /** Trae la lista de las últimas notificaciones. */
-  load(): void {
-    this.http
-      .get<Notification[]>(`${this.baseUrl}`, {
-        params: { limit: String(LIST_LIMIT) },
-      })
-      .subscribe({
-        next: (items) => this.itemsSubject.next(items),
-        error: () => this.itemsSubject.next([]),
-      });
+  /** Trae una porción de la lista (la más reciente primero). Se usa tanto
+   *  para el panel de la campana como para la vista de "ver todas", que la
+   *  va paginando con `offset`. */
+  fetch(limit: number, offset = 0): Observable<Notification[]> {
+    return this.http.get<Notification[]>(`${this.baseUrl}`, {
+      params: { limit: String(limit), offset: String(offset) },
+    });
   }
 
-  /** Marca una como leída y ajusta el contador local. */
-  markRead(id: number): void {
+  /** Trae la lista para el panel de la campana. */
+  load(): void {
+    this.fetch(PANEL_LIMIT).subscribe({
+      next: (items) => this.itemsSubject.next(items),
+      error: () => this.itemsSubject.next([]),
+    });
+  }
+
+  /** Marca una como leída y ajusta el contador local.
+   *
+   *  `wasUnread` lo pasan las pantallas que tienen su propia lista (la vista de
+   *  "ver todas"), que no siempre está en el subject del panel: si se entra a
+   *  esa vista sin abrir la campana, el item no está en el subject y sin este
+   *  dato el contador no bajaría hasta el próximo polling. */
+  markRead(id: number, wasUnread = true): void {
     const current = this.itemsSubject.getValue();
-    const item = current.find((n) => n.id === id);
-    if (item && !item.is_read) {
+    const inPanel = current.find((n) => n.id === id);
+    const unread = inPanel ? !inPanel.is_read : wasUnread;
+    if (unread) {
       this.unreadCountSubject.next(Math.max(0, this.unreadCount - 1));
+    }
+    if (inPanel) {
       this.itemsSubject.next(
         current.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
       );
@@ -96,12 +112,12 @@ export class NotificationService implements OnDestroy {
     this.http.post(`${this.baseUrl}${id}/read/`, {}).subscribe();
   }
 
-  /** Marca todas como leídas. */
+  /** Marca todas como leídas. Siempre pega el endpoint: la lista de la vista
+   *  "ver todas" no vive en el subject del panel, así que no se puede decidir
+   *  con la lista local si hay algo sin leer. */
   markAllRead(): void {
-    const current = this.itemsSubject.getValue();
-    if (!current.some((n) => !n.is_read)) return;
     this.unreadCountSubject.next(0);
-    this.itemsSubject.next(current.map((n) => ({ ...n, is_read: true })));
+    this.itemsSubject.next(this.itemsSubject.getValue().map((n) => ({ ...n, is_read: true })));
     this.http.post(`${this.baseUrl}read_all/`, {}).subscribe();
   }
 }

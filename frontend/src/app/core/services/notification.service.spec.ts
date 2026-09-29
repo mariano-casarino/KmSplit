@@ -16,8 +16,10 @@ const notification: Notification = {
   id: 1,
   kind: 'trip',
   actor_name: 'Mariano',
-  message: 'Mariano registrÃ³ un viaje de 45 km el 02/07.',
+  message: 'Mariano registró un viaje de 45 km el 02/07.',
   link: '/vehiculo/5/historial',
+  record_id: 12,
+  vehicle_id: 5,
   is_read: false,
   created_at: '2026-07-02T18:00:00Z',
 };
@@ -38,7 +40,7 @@ describe('NotificationService', () => {
     http.verify();
   });
 
-  it('refreshUnread() actualiza el contador de no leÃ­das', () => {
+  it('refreshUnread() actualiza el contador de no leídas', () => {
     service.refreshUnread();
     http.expectOne(`${baseUrl}unread_count/`).flush({ count: 3 });
     expect(service.unreadCount).toBe(3);
@@ -66,6 +68,22 @@ describe('NotificationService', () => {
     http.expectOne(`${baseUrl}${notification.id}/read/`).flush(null);
 
     expect(service.unreadCount).toBe(0);
+  });
+
+  it('markRead() con la lista del panel vacía usa wasUnread para el contador', () => {
+    // caso real: se abre "ver todas" sin haber abierto la campana, así que
+    // el subject del panel está vacío y no hay item del cual desconfiar
+    service.refreshUnread();
+    http.expectOne(`${baseUrl}unread_count/`).flush({ count: 2 });
+
+    service.markRead(notification.id, true);
+    http.expectOne(`${baseUrl}${notification.id}/read/`).flush(null);
+    expect(service.unreadCount).toBe(1);
+
+    // una que ya estaba leída no tiene que bajar el contador
+    service.markRead(notification.id, false);
+    http.expectOne(`${baseUrl}${notification.id}/read/`).flush(null);
+    expect(service.unreadCount).toBe(1);
   });
 
   it('markAllRead() marca todo y llama a read_all', async () => {

@@ -4,11 +4,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 
 import { Notification } from '../../core/models/notification.model';
 import { NotificationService } from '../../core/services/notification.service';
+import { notificationTarget } from '../../core/utils/records';
+
+/** Cuántas notificaciones muestra el panel. El resto está en la vista de
+ *  "ver todas", así el panel no tapa la pantalla. */
+const PANEL_ITEMS = 3;
 
 /**
  * Campana de notificaciones: badge con el contador de no leídas y, al tocar,
- * un panel con la lista reciente. Cada item navega a su destino y se marca
- * como leído. El contador lo mantiene NotificationService (polling).
+ * un panel con las últimas. Cada item navega a su destino y se marca como
+ * leído. El contador lo mantiene NotificationService (polling).
  */
 @Component({
   selector: 'app-notifications-bell',
@@ -25,6 +30,8 @@ export class NotificationsBellComponent {
   protected displayCount = computed(() =>
     this.unreadCount() > 99 ? '99+' : String(this.unreadCount()),
   );
+  /** Solo las 3 primeras: el resto se ve en la vista de notificaciones. */
+  protected visibleItems = computed(() => this.items().slice(0, PANEL_ITEMS));
 
   private service = inject(NotificationService);
   private router = inject(Router);
@@ -53,9 +60,34 @@ export class NotificationsBellComponent {
     this.service.markAllRead();
   }
 
+  /** Cierra el panel y lleva a la vista con todas las notificaciones. */
+  openAll(): void {
+    this.close();
+    this.router.navigate(['/notificaciones']);
+  }
+
   openItem(item: Notification): void {
     this.service.markRead(item.id);
     this.close();
+
+    // Con record_id sabemos qué registro es: vamos al resumen pidiendo el
+    // resaltado. El resumen/historial se encargan de bajarse al historial (o a
+    // los últimos 7 días) si el registro no está a la vista. Las
+    // notificaciones viejas (sin record_id) caen en la lista de registros.
+    const target = notificationTarget({
+      vehicleId: item.vehicle_id,
+      kind: item.kind,
+      recordId: item.record_id,
+      createdAt: item.created_at,
+    });
+
+    if (target) {
+      this.router.navigate(target.segments, {
+        queryParams: target.highlight ? { highlight: target.highlight } : {},
+      });
+      return;
+    }
+
     if (item.link) {
       this.router.navigateByUrl(item.link);
     }
