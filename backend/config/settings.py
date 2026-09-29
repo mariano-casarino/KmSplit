@@ -221,6 +221,12 @@ GOOGLE_CLOCK_SKEW_SECONDS = config("GOOGLE_CLOCK_SKEW_SECONDS", default=60, cast
 EMAIL_BACKEND = "core.mail.SmtpEmailBackend"
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@kmsplit.app")
 DEFAULT_FROM_NAME = config("DEFAULT_FROM_NAME", default="KmSplit")
+# URL pública del frontend: la usan los emails para armar los links (recuperar
+# contraseña, botón de bienvenida). En producción tiene que ser la de Vercel.
+FRONTEND_URL = config(
+    "FRONTEND_URL",
+    default=("https://kmsplit.vercel.app" if ENVIRONMENT == "production" else "http://localhost:4200"),
+)
 EMAIL_HOST = config("EMAIL_HOST", default="")
 EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")

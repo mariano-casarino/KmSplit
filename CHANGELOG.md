@@ -7,6 +7,29 @@ semántico.
 Las fechas son las del tag de cada versión. El detalle fino de cada cambio está
 en el historial de Git.
 
+## [No publicado]
+
+### Agregado
+
+- **Mail de bienvenida** para cada usuario nuevo (registro por email o alta con
+  Google): agradece, explica los tres pasos para arrancar (crear el grupo,
+  cargar viajes y cargas, ver la liquidación) y recuerda los dos extras: la
+  campana y poder agregar la app a la pantalla de inicio.
+- `FRONTEND_URL` en el backend: los emails arman sus links con la URL pública
+  del frontend (en producción, la de Vercel).
+
+### Cambiado
+
+- **Los emails ahora salen en HTML maquetado** (tabla + estilos inline, la
+  paleta de la app), no solo en texto plano: el código de recuperación va en
+  una caja destacada con el link a la pantalla, y el botón tiene fallback VML
+  para Outlook. El texto plano se sigue mandando como respaldo.
+- El asunto del mail de recuperación ahora incluye el código, así se ve sin
+  abrir el mail.
+- Un único punto de envío (`core.mail.send_app_email`) elige Brevo o SMTP y
+  **nunca rompe el endpoint**: si el proveedor falla, el alta de usuario o el
+  pedido de código se completan igual.
+
 ## [Publicado]
 
 ## [1.0.1] — 2026-09-29
