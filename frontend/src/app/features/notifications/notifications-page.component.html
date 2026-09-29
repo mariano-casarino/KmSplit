@@ -1,0 +1,43 @@
+<div class="screen">
+  <div class="screen-header">
+    <app-back-button (tap)="back()" />
+    <h1>Notificaciones</h1>
+    <span class="icon-btn-spacer"></span>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Cargando...</p>
+  } @else if (errorMessage()) {
+    <p class="field-error">{{ errorMessage() }}</p>
+  } @else if (items().length === 0) {
+    <p class="muted">No tenés notificaciones todavía.</p>
+  } @else {
+    @if (unreadCount() > 0) {
+      <div class="page-actions">
+        <span class="muted">{{ unreadCount() }} sin leer</span>
+        <button class="link" type="button" (click)="markAllRead()">Marcar todas</button>
+      </div>
+    }
+
+    <ul class="notif-list">
+      @for (item of items(); track item.id) {
+        <li class="notif-card" [class.unread]="!item.is_read" (click)="openItem(item)">
+          <span class="notif-icon">{{ item.kind === 'fuel' ? '⛽' : '📍' }}</span>
+          <span class="notif-body">
+            <span class="notif-msg">{{ item.message }}</span>
+            <span class="notif-time">{{ item.created_at | date: 'dd/MM/yyyy · HH:mm' }}</span>
+          </span>
+          @if (!item.is_read) {
+            <span class="notif-dot" aria-hidden="true"></span>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (hasMore()) {
+      <button class="btn btn-secondary load-more" type="button" [disabled]="loadingMore()" (click)="loadMore()">
+        {{ loadingMore() ? 'Cargando...' : 'Cargar más' }}
+      </button>
+    }
+  }
+</div>

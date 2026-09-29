@@ -32,6 +32,11 @@ export class ProfileComponent {
    *  de un grupo). Determina a dónde vuelve el botón de atrás. */
   private readonly from = this.route.snapshot.queryParamMap.get('from') ?? 'grupos';
 
+  /** Ruta exacta de la pantalla desde la que se abrió el perfil (ej:
+   *  /vehiculo/3/resumen). Tiene prioridad sobre `from`: si viene, el botón de
+   *  atrás devuelve al usuario a la vista en la que estaba. */
+  private readonly back = this.route.snapshot.queryParamMap.get('back');
+
   user = signal<User | null>(this.auth.getCurrentUser());
   loading = signal(this.user() === null);
 
@@ -87,8 +92,14 @@ export class ProfileComponent {
     }
   }
 
-  /** Dónde vuelve el botón de atrás según dónde se abrió el perfil. */
+  /** Dónde vuelve el botón de atrás: a la pantalla exacta desde la que se
+   *  abrió el perfil (si la pasó), o al selector de grupos / lista de
+   *  vehículos según el flujo legacy. */
   backRoute(): (string | number)[] {
+    if (this.back) {
+      const segments = this.back.split('/').filter(Boolean);
+      return ['/', ...segments];
+    }
     return this.from === 'vehiculos'
       ? ['/vehiculos']
       : ['/grupos', 'selector'];

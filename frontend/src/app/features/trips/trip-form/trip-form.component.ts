@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { Trip } from '../../../core/models/trip.model';
@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TripService } from '../../../core/services/trip.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
+import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
@@ -31,7 +32,7 @@ function calcularKmFinal(kmReferencia: number, digitos: string): number {
 @Component({
   selector: 'app-trip-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, BottomNavComponent, NotificationsBellComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './trip-form.component.html',
   styleUrl: './trip-form.component.scss',
 })
@@ -46,12 +47,19 @@ export class TripFormComponent implements OnInit {
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
   returnTo = this.route.snapshot.queryParamMap.get('returnTo');
 
+  /** Pantalla exacta desde la que se abre el perfil, para que su botón de
+   *  atrás devuelva al form de viaje y no a la lista de vehículos. */
+  profileBack = `/vehiculo/${this.vehicleId}/viaje`;
+
   /** Km inicial por defecto para un registro nuevo (último km del vehículo). */
   private defaultStartKm = 0;
 
   loading = signal(false);
   loadingContext = signal(true);
   errorMessage = signal<string | null>(null);
+  /** Confirmación visual del guardado en modo edición: el botón se pone verde
+   *  durante 1s y recién ahí volvemos a la pantalla desde la que se editaba. */
+  saveSuccess = signal(false);
 
   useShortcut = signal(true);
   userName = signal('');
@@ -177,6 +185,7 @@ export class TripFormComponent implements OnInit {
     this.editingTripUserName.set(null);
     this.useShortcut.set(true);
     this.errorMessage.set(null);
+    this.saveSuccess.set(false);
     this.form.reset({
       trip_date: this.today(),
       start_km: this.defaultStartKm,
@@ -222,6 +231,7 @@ export class TripFormComponent implements OnInit {
   private applyTripToForm(trip: Trip): void {
     this.editingTripId.set(trip.id);
     this.useShortcut.set(false);
+    this.saveSuccess.set(false);
     this.form.patchValue({
       trip_date: trip.trip_date,
       start_km: trip.start_km,
@@ -262,11 +272,13 @@ export class TripFormComponent implements OnInit {
         // lista de viajes cacheada (esta misma pantalla) quedan viejos
         this.vehicleService.invalidate(this.vehicleId);
         this.tripService.invalidateVehicle(this.vehicleId);
-        if (this.returnTo === 'viaje') {
-          this.reloadContext();
-        } else {
-          this.goBack();
+        if (!editingId) {
+          this.leaveAfterSave();
+          return;
         }
+        // confirmación de 1s (botón verde) y recién después volvemos
+        this.saveSuccess.set(true);
+        setTimeout(() => this.leaveAfterSave(), 1000);
       },
       error: (err) => {
         this.loading.set(false);
@@ -277,6 +289,15 @@ export class TripFormComponent implements OnInit {
         );
       },
     });
+  }
+
+  /** Vuelve a la pantalla desde la que se estaba editando el registro. */
+  private leaveAfterSave(): void {
+    if (this.returnTo === 'viaje') {
+      this.reloadContext();
+    } else {
+      this.goBack();
+    }
   }
 
   private today(): string {

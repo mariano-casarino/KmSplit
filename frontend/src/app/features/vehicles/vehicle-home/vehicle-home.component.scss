@@ -60,24 +60,45 @@
 }
 
 .vehicle-photo-admin-needed {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 12px;
 }
 
 .vehicle-photo-remove {
   align-self: flex-start;
-  margin-bottom: 10px;
+  margin: 0;
   padding: 3px;
 }
 
 .vehicle-photo-status {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 12.5px;
   color: var(--green);
 }
 
+.vehicle-info-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.vehicle-info-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .vehicle-meta {
-  margin: 0 0 20px;
+  margin: 0;
+}
+
+.vehicle-settings {
+  flex-shrink: 0;
+  align-self: flex-end;
 }
 
 .action-card {

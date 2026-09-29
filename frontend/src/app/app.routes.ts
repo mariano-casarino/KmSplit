@@ -64,6 +64,17 @@ export const routes: Routes = [
   },
 
   {
+    // Vista exclusiva de notificaciones (la "ver todas" del panel de la
+    // campana): no tapa la pantalla en la que se está.
+    path: 'notificaciones',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/notifications/notifications-page.component').then(
+        (m) => m.NotificationsPageComponent,
+      ),
+  },
+
+  {
     path: 'google/auth',
     loadComponent: () =>
       import('./features/auth/google-auth-return/google-auth-return.component').then(

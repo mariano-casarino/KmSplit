@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
 import { describe, expect, it } from 'vitest';
@@ -11,6 +12,7 @@ describe('App', () => {
         App,
         RouterModule.forRoot([]),
       ],
+      providers: [provideHttpClient()],
     }).compileComponents();
   });
 

@@ -1,0 +1,196 @@
+:host {
+  position: relative;
+  display: inline-flex;
+}
+
+.bell-button {
+  position: relative;
+}
+
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger, #e11d48);
+  color: var(--white, #fff);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bell-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+// El panel se ancla a la pantalla (no a la campana) para quedar siempre
+// centrado, sin importarle en qué header se montó la campana.
+.bell-panel {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 96px);
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 40px rgba(18, 35, 61, 0.2);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.panel-markall {
+  border: none;
+  background: none;
+  color: var(--blue-500);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  cursor: pointer;
+}
+
+.panel-seeall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  border-top: 1px solid var(--gray-200);
+  background: var(--white);
+  color: var(--blue-500);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-100);
+  }
+}
+
+.panel-seeall-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.panel-state {
+  padding: 20px 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: min(50vh, 380px);
+  overflow-y: auto;
+}
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--gray-200);
+  transition: background 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--gray-100);
+  }
+
+  &.unread {
+    background: var(--blue-100);
+  }
+}
+
+.notif-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notif-msg {
+  font-size: 13px;
+  color: var(--gray-900);
+  line-height: 1.35;
+}
+
+.notif-time {
+  font-size: 11.5px;
+}
+
+.notif-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue-500);
+  margin-top: 6px;
+}
