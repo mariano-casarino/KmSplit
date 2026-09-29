@@ -271,6 +271,7 @@ class TripViewSet(viewsets.ModelViewSet):
                 f"{trip.km_traveled} km el {trip.trip_date:%d/%m}."
             ),
             link=f"/vehiculo/{trip.vehicle_id}/historial",
+            record_id=trip.id,
         )
 
     def perform_update(self, serializer):
@@ -312,6 +313,7 @@ class FuelLoadViewSet(viewsets.ModelViewSet):
                 f"combustible. Hay un resumen nuevo."
             ),
             link=f"/vehiculo/{fuel_load.vehicle_id}/resumen",
+            record_id=fuel_load.id,
         )
         return fuel_load
 
@@ -377,8 +379,11 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         return Notification.objects.filter(recipient=self.request.user)
 
     def list(self, request, *args, **kwargs):
-        limit = min(int(request.query_params.get("limit", 20)), 50)
-        queryset = self.get_queryset()[:limit]
+        # Paginado para que la vista de "ver todas" pueda seguir bajando: la
+        # campana pide una porción chica y esa vista pide tandas de 25.
+        limit = min(int(request.query_params.get("limit", 20)), 100)
+        offset = max(int(request.query_params.get("offset", 0)), 0)
+        queryset = self.get_queryset()[offset : offset + limit]
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

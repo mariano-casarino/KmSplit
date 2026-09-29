@@ -153,12 +153,13 @@ class FuelLoadSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     actor_name = serializers.SerializerMethodField()
+    vehicle_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = Notification
         fields = [
             "id", "kind", "actor_name", "message", "link",
-            "is_read", "created_at",
+            "record_id", "vehicle_id", "is_read", "created_at",
         ]
         read_only_fields = fields
 

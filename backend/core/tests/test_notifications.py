@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 
-from core.models import Notification
+from core.models import FuelLoad, Notification, Trip
 
 pytestmark = pytest.mark.django_db
 
@@ -34,6 +34,7 @@ class TestTripNotifications:
         assert n.actor == family["owner"]
         assert "45 km" in n.message
         assert n.link == f"/vehiculo/{vehicle.id}/historial"
+        assert n.record_id == Trip.objects.get(vehicle=vehicle).id
 
     def test_dont_notify_inactive_members(self, family, vehicle):
         family["member"].memberships.update(is_active=False)
@@ -68,6 +69,24 @@ class TestFuelLoadNotifications:
         assert n.kind == "fuel"
         assert "12500.50" in n.message
         assert n.link == f"/vehiculo/{vehicle.id}/resumen"
+        assert n.record_id == FuelLoad.objects.get(vehicle=vehicle).id
+
+    def test_fuel_load_exposes_vehicle_and_record_in_api(self, family, vehicle):
+        client = auth_client(family["admin"])
+        response = client.post("/api/fuel-loads/", {
+            "vehicle": vehicle.id, "load_date": "2026-07-02",
+            "odometer_km": 1100, "amount": "12500.50",
+        })
+        assert response.status_code == 201
+        created_id = response.data["id"]
+
+        client = auth_client(family["owner"])
+        listing = client.get("/api/notifications/")
+        assert listing.status_code == 200
+        payload = listing.data[0]
+        assert payload["kind"] == "fuel"
+        assert payload["vehicle_id"] == vehicle.id
+        assert payload["record_id"] == created_id
 
     def test_solo_actor_gets_no_notifications(self, family, vehicle):
         family["admin"].memberships.update(is_active=False)
@@ -114,6 +133,36 @@ class TestNotificationAPI:
         assert response.status_code == 200
         ids = [n["id"] for n in response.data]
         assert ids == [new.id, old.id]
+
+    def test_list_paginates_with_limit_and_offset(self, family, vehicle):
+        from django.utils import timezone
+        from datetime import timedelta
+
+        ids = []
+        # de la más nueva a la más vieja
+        for hours in range(1, 6):
+            n = self._notification(family["owner"], family["member"])
+            Notification.objects.filter(pk=n.pk).update(
+                created_at=timezone.now() - timedelta(hours=hours)
+            )
+            ids.append(n.id)
+
+        client = auth_client(family["owner"])
+
+        # primera tanda: las 2 más recientes
+        first = client.get("/api/notifications/?limit=2")
+        assert first.status_code == 200
+        assert [n["id"] for n in first.data] == [ids[0], ids[1]]
+
+        # segunda tanda: sigue donde cortó, sin repetir
+        second = client.get("/api/notifications/?limit=2&offset=2")
+        assert second.status_code == 200
+        assert [n["id"] for n in second.data] == [ids[2], ids[3]]
+
+        # más allá del total: lista vacía, no error
+        beyond = client.get("/api/notifications/?limit=2&offset=99")
+        assert beyond.status_code == 200
+        assert beyond.data == []
 
     def test_mark_read_only_changes_requested_one(self, family, vehicle):
         a = self._notification(family["owner"], family["member"])
