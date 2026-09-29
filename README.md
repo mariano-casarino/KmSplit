@@ -2,11 +2,16 @@
 🔗 **[Ver la app en vivo](https://kmsplit.vercel.app/login)**
 > Reparto justo del gasto de combustible en autos compartidos, proporcional a los km recorridos por cada persona.
 
+**Versión actual:** [`v1.0.0`](https://github.com/mariano-casarino/KmSplit/releases) ·
+[CHANGELOG](CHANGELOG.md) · [Guía de desarrollo](DEVELOPMENT.md)
+
 ## Descripción
 
 KmSplit es una aplicación web mobile-first que resuelve un problema muy común en familias o grupos que comparten un mismo auto: **repartir el gasto de combustible de forma justa**, según cuánto manejó realmente cada persona, y no de forma equitativa a ciegas.
 
 La app permite registrar los viajes diarios de cada conductor y las cargas de combustible, calculando automáticamente cuánto le corresponde pagar a cada integrante del grupo en base a los kilómetros recorridos entre carga y carga.
+
+Aunque el diseño es mobile-first, **la app se ve bien en cualquier pantalla**: en tablet y escritorio la interfaz se mantiene en una columna centrada, con más aire y foco visible para navegar con teclado.
 
 ## Problema que resuelve
 
@@ -19,7 +24,7 @@ KmSplit digitaliza y automatiza ese proceso, ofreciendo:
 - Historial y visualización clara del gasto de cada integrante
 - Detección de kilómetros no asignados (viajes no registrados) para mantener la trazabilidad
 
-## Funcionalidades (MVP)
+## Funcionalidades del MVP
 
 - [x] Registro y login de usuarios
 - [x] Creación de grupos (familia/convivientes) y vehículo asociado
@@ -29,14 +34,43 @@ KmSplit digitaliza y automatiza ese proceso, ofreciendo:
 - [x] Dashboard con historial y gráficos de gasto por persona
 - [x] Diseño responsive, mobile-first
 
+## Funcionalidades agregadas después del MVP
+
+- [x] **Login con Google** (verificación de `id_token` en el backend, vinculación por email y foto sincronizada)
+- [x] **Notificaciones dentro de la app**: campana con badge, panel, vista paginada y "abrir/resaltar el registro" que originó el aviso
+- [x] **Perfil** editable con cambio de contraseña, avatar y cierre de sesión
+- [x] **Recuperación de contraseña** con código por email
+- [x] **Roles por grupo** (propietario / administrador / integrante) con permisos de edición
+- [x] **Fotos**: avatar de perfil, foto del grupo y foto del vehículo
+- [x] **Detalle de liquidación** con el reparto por integrante, marcado de pagado y eliminación
+- [x] **Resumen e historial** navegables con el mismo formato, historial por km y "km sin registrar"
+- [x] **Respaldo automático a Google Sheets** vía Apps Script
+- [x] **PWA instalable** (agregar a la pantalla de inicio)
+- [x] **Responsive**: la app se ve bien en tablet y pc, no solo en celular
+
 ## Stack tecnológico
 
-**Backend:** Django + Django REST Framework, PostgreSQL    
-**Frontend:** Angular, Html, Scss, Tailwind    
-**Diseño:** Figma    
-**Infraestructura:** Docker, Docker Compose    
-**Deploy:** Backend en Railway, Frontend en Vercel, CI/CD automático
-desde GitHub (cada push a `main` deploya solo).  
+**Backend:** Python 3.12, Django 5.2 (LTS), Django REST Framework, Gunicorn (3 workers)  
+**Base de datos:** PostgreSQL 16  
+**Cache y throttling:** Redis 7  
+**Frontend:** Angular 21, SCSS con variables CSS, Vitest para los tests  
+**Autenticación:** JWT en cookies httpOnly + Google OAuth (`id_token` verificado en el backend)  
+**Emails:** Brevo (API HTTPS) para la recuperación de contraseña  
+**Integraciones:** Google Sheets (Apps Script) para el respaldo de viajes y cargas  
+**Diseño:** Figma  
+**Infraestructura:** Docker + Docker Compose (PostgreSQL, Redis, backend, frontend)
+
+### Deploy
+
+- **Frontend:** Vercel
+- **Backend:** Railway (PostgreSQL y Redis administrados)
+- Automatización por **integración con GitHub**: cada push a `main` dispara el
+  deploy de ambos. Las migraciones se aplican solas al arrancar el backend.
+- **No hay CI**: las suites de tests (148 de backend, 85 de frontend) se corren a
+  mano antes de mergear a `main`.
+
+Para levantar el proyecto y correr los tests: [DEVELOPMENT.md](DEVELOPMENT.md).
+Para el historial de versiones: [CHANGELOG.md](CHANGELOG.md).
 
 ## 📂 Estructura del proyecto  
 
@@ -58,7 +92,10 @@ KmSplit/
 │   ├── angular.json
 │   └── package.json
 │
+├── docs/schema.dbml          # Esquema relacional (espejo de los models)
 ├── docker-compose.yml        # Orquestación de los servicios
+├── CHANGELOG.md              # Historial de versiones
+├── DEVELOPMENT.md            # Guía para levantar el proyecto y correr los tests
 └── README.md                 # Documentación del proyecto
 ```
 ## 📸 Capturas / Demo
@@ -165,6 +202,8 @@ Para este proyecto se diseñó el Modelo Relacional utilizando dbdiagram.io, una
 
 <img width="1239" height="798" alt="image" src="https://github.com/user-attachments/assets/03323a2e-888f-42a1-b673-3a5da96884dc" />
 
+> El esquema vive en el repo como código: [`docs/schema.dbml`](docs/schema.dbml) es el espejo de los modelos de Django. Cuando cambia el modelo, se actualiza el archivo y se regenera el diagrama pegándolo en dbdiagram.io (ahí ya está `Notification.record_id`, agregado en la v1.0.0).
+
 
 
 
@@ -180,13 +219,20 @@ Para este proyecto se diseñó el Modelo Relacional utilizando dbdiagram.io, una
 - [x] Frontend mobile-first
 - [x] Deploy
 - [x] Login con Google (foto de perfil sincronizada)
-- [ ] Funcionalidades extra (invitar por link, exportar PDF)
+- [x] Notificaciones dentro de la app (campana, panel y vista de todas)
+- [x] Perfil, roles por grupo y recuperación de contraseña
+- [x] Adaptación a tablet y escritorio (v1.0.0)
+- [ ] Invitar por link
+- [ ] Exportar a PDF
+- [ ] Pipeline de tests en GitHub Actions
 
 ## 👤 Autor
 
 **Mariano Casarino** — Estudiante de la Tecnicatura Superior en Desarrollo de Software (TSDS), ISPC, Córdoba, Argentina.
 Full Stack Developer Jr en formación | [LinkedIn](https://www.linkedin.com/in/mariano-casarino) | [Portfolio](https://porfolio-mariano-casarino.vercel.app/)
 
-## 📄 Licencia
+## 📄 Alcance del proyecto
 
-Este proyecto es de código abierto y fue creado con fines de portfolio y aprendizaje.
+Proyecto con fines de portfolio y aprendizaje. El código es de mi autoría y no
+se distribuye bajo ninguna licencia abierta: se puede estudiar e inspirarse para
+aprender, pero no está permitido reutilizarlo ni redistribuirlo.
