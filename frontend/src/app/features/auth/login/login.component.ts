@@ -54,18 +54,12 @@ export class LoginComponent {
     this.auth.login({ email, password, remember: rememberMe }).subscribe({
       next: () => {
         this.auth.fetchMe().subscribe({
-          next: () => {
-            this.loading.set(false);
-            this.resume();
-          },
-          error: () => {
-            this.loading.set(false);
-            this.resume();
-          },
+          next: () => this.resume(),
+          error: () => this.resume(),
         });
       },
       error: (err) => {
-        this.loading.set(false);
+        this.unlock();
 
         if (err.status === 429) {
           const seconds = err.error?.retry_after_seconds ?? 60;
@@ -97,7 +91,11 @@ export class LoginComponent {
    *  crea una nueva, y sincroniza la foto del perfil de Google. */
   loginWithGoogle(): void {
     if (this.googleLoading()) return;
+    // También se marca `loading`: mientras Google responde y la app reanuda la
+    // sesión, el formulario entero queda bloqueado y no se puede disparar un
+    // login por email en paralelo.
     this.googleLoading.set(true);
+    this.loading.set(true);
     this.errorMessage.set(null);
     this.googleError.set(null);
 
@@ -118,20 +116,17 @@ export class LoginComponent {
   }
 
   private finishGoogleLogin(): void {
+    // El botón sigue en "Ingresando con Google..." hasta que navegamos: si se
+    // destraba acá, vuelve a decir "Continuar con Google" mientras la app todavía
+    // está reanudando, y el usuario lo interpreta como un fallo.
     this.auth.fetchMe().subscribe({
-      next: () => {
-        this.googleLoading.set(false);
-        this.resume();
-      },
-      error: () => {
-        this.googleLoading.set(false);
-        this.resume();
-      },
+      next: () => this.resume(),
+      error: () => this.resume(),
     });
   }
 
   private failGoogle(err: unknown): void {
-    this.googleLoading.set(false);
+    this.unlock();
     const status = (err as { status?: number })?.status;
     const detail = (err as { error?: { detail?: string } })?.error?.detail;
     if (err instanceof Error && status === undefined) {
@@ -155,9 +150,26 @@ export class LoginComponent {
    *  si la reanudación falla, cae al selector de grupos. */
   private resume(): void {
     this.sessionResume.resumeRoute().subscribe({
-      next: (route) => this.router.navigate(route),
-      error: () => this.router.navigate(['/grupos/selector']),
+      next: (route) => this.navigate(route),
+      error: () => this.navigate(['/grupos/selector']),
     });
+  }
+
+  private navigate(route: string[]): void {
+    this.router.navigate(route).then(
+      (ok) => {
+        // Navegar bien destruye el componente y el estado no importa. Si la
+        // navegación no ocurre (guard, ruta caída) sí hay que destrabar.
+        if (!ok) this.unlock();
+      },
+      () => this.unlock(),
+    );
+  }
+
+  /** Destraba el formulario. Solo se usa cuando algo falló de verdad. */
+  private unlock(): void {
+    this.loading.set(false);
+    this.googleLoading.set(false);
   }
 
   private startLockoutCountdown(seconds: number): void {
