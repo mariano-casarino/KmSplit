@@ -37,6 +37,10 @@ export class VehicleHomeComponent implements OnInit {
 
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
 
+  /** Pantalla exacta desde la que se abre el perfil, para que el botón de
+   *  atrás del perfil devuelva acá y no a la lista de vehículos. */
+  profileBack = `/vehiculo/${this.vehicleId}`;
+
   vehicle = signal<Vehicle | null>(null);
   group = signal<Group | null>(null);
   loading = signal(true);

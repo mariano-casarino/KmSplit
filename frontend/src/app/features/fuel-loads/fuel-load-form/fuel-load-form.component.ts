@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { Settlement } from '../../../core/models/settlement.model';
 import { FuelLoad } from '../../../core/models/fuel-load.model';
@@ -10,12 +10,13 @@ import { SettlementService } from '../../../core/services/settlement.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
 import { formatKm } from '../../../core/utils/format-args';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
+import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 @Component({
   selector: 'app-fuel-load-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BottomNavComponent, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, BottomNavComponent, NotificationsBellComponent, BackButtonComponent],
   templateUrl: './fuel-load-form.component.html',
   styleUrl: './fuel-load-form.component.scss',
 })
@@ -28,6 +29,9 @@ export class FuelLoadFormComponent {
   private vehicleService = inject(VehicleService);
 
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
+  /** Pantalla exacta desde la que se abre el perfil, para que su botón de
+   *  atrás devuelva al form de carga y no a la lista de vehículos. */
+  profileBack = `/vehiculo/${this.vehicleId}/carga`;
   /** Si estamos editando una carga existente, su id viene por ?edit=. */
   editId = signal<number | null>(null);
   /** Id de la liquidación de la que venimos al editar (?liquidacion=). */
@@ -172,6 +176,9 @@ export class FuelLoadFormComponent {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // sin esto el submit era un no-op silencioso: se tocaba "Guardar cambios"
+      // y no pasaba nada, sin decir qué faltaba
+      this.errorMessage.set('Revisá la fecha, el km y el monto antes de guardar.');
       return;
     }
 

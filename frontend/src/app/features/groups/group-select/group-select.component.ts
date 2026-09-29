@@ -7,7 +7,6 @@ import { User } from '../../../core/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
 import { AvatarComponent } from '../../../shared/avatar/avatar.component';
-import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 import { fileToCompressedDataUri } from '../../../shared/utils/image.util';
 
 type Feedback = { type: 'success' | 'error'; text: string } | null;
@@ -15,7 +14,7 @@ type Feedback = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-group-select',
   standalone: true,
-  imports: [CommonModule, RouterLink, AvatarComponent, NotificationsBellComponent],
+  imports: [CommonModule, RouterLink, AvatarComponent],
   templateUrl: './group-select.component.html',
   styleUrl: './group-select.component.scss',
 })

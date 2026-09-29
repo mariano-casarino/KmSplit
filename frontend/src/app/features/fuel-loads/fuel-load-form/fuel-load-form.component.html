@@ -3,11 +3,47 @@
     @if (isEdit) {
       <app-back-button (tap)="cancelEdit()" />
       <h1>Editar carga</h1>
-      <span class="icon-btn-spacer"></span>
+      <span class="header-actions">
+        <app-notifications-bell />
+        <a class="icon-btn" routerLink="/perfil" [queryParams]="{ back: profileBack }" aria-label="Ver mi perfil">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </a>
+      </span>
     } @else {
       <app-back-button [link]="['/vehiculo', vehicleId]" />
       <h1>Registrar carga</h1>
-      <span class="icon-btn-spacer"></span>
+      <span class="header-actions">
+        <app-notifications-bell />
+        <a class="icon-btn" routerLink="/perfil" [queryParams]="{ back: profileBack }" aria-label="Ver mi perfil">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </a>
+      </span>
     }
   </div>
 
@@ -22,6 +58,9 @@
   <form [formGroup]="form" (ngSubmit)="submit()" class="fuel-form">
     <div>
       <input class="field" type="date" formControlName="load_date" />
+      @if (form.controls.load_date.invalid && form.controls.load_date.touched) {
+        <p class="field-error">Elegí la fecha de la carga.</p>
+      }
     </div>
 
     <div>
@@ -77,7 +116,7 @@
         [disabled]="loading() || editLoading() || saveSuccess()"
       >
         @if (saveSuccess()) {
-          Cambio exitoso
+          Cambio guardado
         } @else if (loading()) {
           Guardando...
         } @else {
