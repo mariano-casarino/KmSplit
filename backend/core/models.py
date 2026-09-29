@@ -268,6 +268,15 @@ class Notification(models.Model):
         default="",
         help_text="Ruta del frontend a la que lleva al tocar la notificación",
     )
+    record_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Id del viaje o de la carga que originó el aviso. Permite abrir "
+            "el registro puntual y resaltarlo, en vez de llevar a una pantalla "
+            "genérica."
+        ),
+    )
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
