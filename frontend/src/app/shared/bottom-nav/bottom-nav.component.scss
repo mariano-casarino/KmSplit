@@ -32,3 +32,16 @@
 .nav-icon {
   font-size: 18px;
 }
+
+/* En pantallas anchas acompaña el ancho de la columna centrada y deja de
+   ser una barra pegada a los bordes de la ventana. */
+@media (min-width: 768px) {
+  .bottom-nav {
+    max-width: 560px;
+    border: 1px solid var(--gray-300);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    box-shadow: 0 -8px 24px rgba(18, 35, 61, 0.06);
+    padding: 12px 0;
+  }
+}

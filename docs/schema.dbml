@@ -1,0 +1,190 @@
+// Esquema relacional de KmSplit -> lo mismo que en https://dbdiagram.io/
+// Espejo de backend/core/models.py y backend/accounts/models.py.
+// Última revisión: 2026-09-29
+
+Enum role {
+  owner
+  admin
+  member
+}
+
+Enum fuel_type {
+  nafta
+  gasoil
+  [note: 'se guardan las etiquetas originales de la app']
+}
+
+Enum settlement_status {
+  pendiente
+  pagado
+}
+
+Enum invitation_status {
+  pendiente
+  aceptada
+  rechazada
+  cancelada
+}
+
+Enum notification_kind {
+  trip
+  fuel
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(150)
+  first_name varchar(150)
+  last_name varchar(150)
+  avatar_url text
+  google_picture text
+  email varchar [unique, note: 'es el username: no hay campo username']
+  password varchar [note: 'AbstractBaseUser; vacío si entra con Google']
+  is_active boolean [default: true]
+  is_staff boolean [default: false]
+  is_superuser boolean [default: false]
+  date_joined datetime
+  last_login datetime
+  created_at datetime
+
+  Note: 'AUTH_USER_MODEL. Los permisos de Django se resuelven con groups y user_permissions.'
+}
+
+Table groups {
+  id bigint [pk, increment]
+  name varchar(150)
+  avatar_url text
+  invite_code varchar(12) [unique, note: 'para invitar por link']
+  created_by bigint [ref: > users.id, note: 'PROTECT']
+  created_at datetime
+}
+
+Table group_memberships {
+  id bigint [pk, increment]
+  group_id bigint [ref: > groups.id]
+  user_id bigint [ref: > users.id]
+  role role
+  is_active boolean [note: 'baja lógica: removed_at se llena y el usuario deja de recibir avisos']
+  joined_at datetime
+  removed_at datetime
+
+  Indexes {
+    (group_id, user_id) [unique, name: 'unique_group_user']
+  }
+}
+
+Table group_invitations {
+  id bigint [pk, increment]
+  group_id bigint [ref: > groups.id]
+  email varchar
+  invited_by bigint [ref: > users.id]
+  status invitation_status
+  token varchar(64) [unique]
+  created_at datetime
+  expires_at datetime
+}
+
+Table vehicles {
+  id bigint [pk, increment]
+  group_id bigint [ref: > groups.id]
+  name varchar(150)
+  fuel_type varchar(20)
+  photo_url text
+  current_km int [note: 'último checkpoint: km de la última carga o del último viaje']
+  split_unassigned_km_all_members boolean
+  created_at datetime
+}
+
+Table trips {
+  id bigint [pk, increment]
+  vehicle_id bigint [ref: > vehicles.id]
+  user_id bigint [ref: > users.id, note: 'PROTECT: quién Manejó']
+  settlement_id bigint [ref: > settlements.id, note: 'NULL hasta que se resuelve a qué liquidación pertenece']
+  trip_date date
+  start_km int
+  end_km int
+  km_traveled int [note: 'calculado, no editable']
+  edited_by bigint [ref: > users.id]
+  created_at datetime
+  updated_at datetime
+
+  Indexes {
+    (vehicle_id, trip_date)
+    (vehicle_id, start_km, end_km) [note: 'detección de huecos y solapamientos por rango de km']
+  }
+}
+
+Table fuel_loads {
+  id bigint [pk, increment]
+  vehicle_id bigint [ref: > vehicles.id]
+  loaded_by bigint [ref: > users.id, note: 'PROTECT']
+  load_date date
+  odometer_km int
+  amount decimal(12,2)
+  liters decimal(6,2)
+  created_at datetime
+
+  Indexes {
+    (vehicle_id, load_date)
+  }
+}
+
+Table settlements {
+  id bigint [pk, increment]
+  vehicle_id bigint [ref: > vehicles.id]
+  fuel_load_id bigint [ref: > fuel_loads.id, note: 'OneToOne + PROTECT: cada liquidación nace de una carga']
+  period_start_km int
+  period_end_km int
+  total_amount decimal(12,2)
+  unassigned_km int [note: 'km sin registrar que se reparten equitativamente']
+  status settlement_status
+  status_updated_by bigint [ref: > users.id]
+  created_at datetime
+
+  Indexes {
+    (vehicle_id, period_start_km, period_end_km)
+  }
+}
+
+Table settlement_details {
+  id bigint [pk, increment]
+  settlement_id bigint [ref: > settlements.id]
+  user_id bigint [ref: > users.id, note: 'PROTECT']
+  registered_km int [note: 'km que esa persona realmente cargó']
+  unassigned_km_share decimal
+  km_driven decimal [note: 'registrados + parte de los no registrados']
+  percentage decimal(5,2)
+  amount_owed decimal(12,2)
+
+  Indexes {
+    (settlement_id, user_id) [unique]
+  }
+}
+
+Table notifications {
+  id bigint [pk, increment]
+  recipient_id bigint [ref: > users.id, note: 'scoped por usuario: solo sus avisos']
+  actor_id bigint [ref: > users.id]
+  vehicle_id bigint [ref: > vehicles.id]
+  kind notification_kind
+  message varchar(255)
+  link varchar [note: 'ruta del frontend a la que lleva el aviso']
+  record_id int [note: 'id del viaje o la carga que lo originó; permite abrir y resaltar ese registro. NULL en los avisos anteriores a la migración 0007.']
+  is_read boolean [default: false]
+  created_at datetime
+
+  Indexes {
+    (recipient_id, is_read)
+    (recipient_id, created_at)
+  }
+}
+
+Table password_resets {
+  id bigint [pk, increment]
+  user_id bigint [ref: > users.id]
+  code varchar(6)
+  is_used boolean
+  used_at datetime
+  created_at datetime
+  expires_at datetime
+}
