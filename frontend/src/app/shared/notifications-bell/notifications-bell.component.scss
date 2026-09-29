@@ -194,3 +194,12 @@
   background: var(--blue-500);
   margin-top: 6px;
 }
+
+/* En pantallas anchas el header es un poco más alto y el panel puede ser
+   un poco más ancho, sin salirse de la columna centrada. */
+@media (min-width: 768px) {
+  .bell-panel {
+    top: 88px;
+    width: min(400px, calc(100vw - 24px));
+  }
+}

@@ -67,7 +67,42 @@ input[type='date'] {
   display: flex;
   flex-direction: column;
   background: var(--white);
+}
 
+/* ============================================================
+   Pantallas anchas (tablet / escritorio)
+   La app no se estira de lado a lado: la columna queda centrada con
+   marco y sombra, como una app móvil ampliada. El contenido sigue
+   siendo una columna (todo el layout es mobile-first de una sola
+   columna), así que no hay grids que romper.
+   ============================================================ */
+@media (min-width: 768px) {
+  body {
+    background: linear-gradient(180deg, #eef1f5 0%, #e3e8ef 100%);
+  }
+
+  .screen {
+    max-width: 560px;
+    padding: 32px 28px 40px;
+    box-shadow:
+      0 0 0 1px var(--gray-300),
+      0 18px 50px rgba(18, 35, 61, 0.08);
+  }
+
+  /* más aire abajo para la barra de navegación */
+  .screen:has(app-bottom-nav) {
+    padding-bottom: 108px;
+  }
+}
+
+/* ============================================================
+   Navegación por teclado: en desktop se navega con Tab, así que
+   el foco tiene que verse. No se redefine el border-radius para no
+   romper los botones circulares (campana, perfil, avatar).
+   ============================================================ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
 }
 
 /* Inputs */
