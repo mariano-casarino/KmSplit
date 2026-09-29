@@ -7,7 +7,6 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -21,7 +20,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
-from core.mail import send_brevo_email
+from core.emails import password_reset_email, welcome_email
+from core.mail import send_templated_email
 from .models import PasswordReset, User
 from .serializers import (
     ChangePasswordSerializer,
@@ -97,6 +97,13 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "register"
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        # Bienvenida: qué se puede hacer en la app y por qué existe. Si el mail
+        # falla, el usuario ya quedó creado igual (send_templated_email no
+        # levanta).
+        send_templated_email(welcome_email, to_email=user.email, name=user.name)
 
 
 class LockedLoginView(TokenObtainPairView):
@@ -254,6 +261,9 @@ class GoogleLoginView(APIView):
                 avatar_url=picture,
                 google_picture=picture,
             )
+            # Cuenta recién creada: es su primera vez, van los mismos comandos
+            # de bienvenida que en el registro por email.
+            send_templated_email(welcome_email, to_email=user.email, name=user.name)
         else:
             # Cuenta existente: se vincula por email y se actualizan los datos
             # de Google que falten, respetando lo que el usuario tocó en la app.
@@ -492,31 +502,19 @@ class PasswordResetRequestView(APIView):
         )
 
         try:
-            subject = "KmSplit: tu código para recuperar la contraseña"
-            body = (
-                f"Hola {user.name}!\n\n"
-                f"Tu código de recuperación es: {reset.code}\n\n"
-                f"Tiene una validez de {settings.PASSWORD_RESET_CODE_TTL_MINUTES} minutos.\n\n"
-                "Si no pediste recuperar tu contraseña, ignorá este mail."
+            send_templated_email(
+                password_reset_email,
+                to_email=user.email,
+                name=user.name,
+                code=reset.code,
+                ttl_minutes=settings.PASSWORD_RESET_CODE_TTL_MINUTES,
             )
-            if settings.BREVO_API_KEY:
-                # Viaja por HTTPS (443) — el SMTP saliente suele estar
-                # bloqueado en la red de Railway.
-                send_brevo_email(
-                    subject=subject,
-                    body=body,
-                    to_email=user.email,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    from_name=settings.DEFAULT_FROM_NAME,
-                )
-            else:
-                send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email])
         except Exception:
-            # Un fallo del proveedor de email (credenciales, TLS, red...)
-            # NO debe tumbar el endpoint ni revelar al usuario que la cuenta existe.
-            # El error real queda en los logs del backend para poder diagnosticarlo.
+            # send_templated_email ya no levanta por fallos del proveedor, pero
+            # un error inesperado (plantilla, settings) tampoco debe tumbar el
+            # endpoint ni revelar al usuario que la cuenta existe.
             logger.exception(
-                "No se pudo enviar el código de reset a %s (EMAIL_HOST=%s)",
+                "No se pudo preparar el mail de reset para %s (EMAIL_HOST=%s)",
                 user.email,
                 settings.EMAIL_HOST,
             )

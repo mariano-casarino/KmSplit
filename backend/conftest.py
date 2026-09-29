@@ -16,3 +16,15 @@ def _disable_https_redirects(settings):
     settings.SESSION_COOKIE_SECURE = False
     settings.CSRF_COOKIE_SECURE = False
     settings.COOKIE_SECURE = False
+
+
+@pytest.fixture(autouse=True)
+def _emails_a_memoria(settings):
+    """Ningún test manda emails reales.
+
+    El .env local trae BREVO_API_KEY y credenciales de Gmail reales, así que sin
+    esto cualquier test que registre un usuario o pida un código de recuperación
+    se iba a la red de verdad. Todo se acumula en `mail.outbox`.
+    """
+    settings.BREVO_API_KEY = ""
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"

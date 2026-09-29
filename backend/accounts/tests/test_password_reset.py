@@ -73,7 +73,8 @@ class TestPasswordResetRequest:
         def broken_send_mail(*args, **kwargs):
             raise Exception("connection refused (smtp mal configurado)")
 
-        monkeypatch.setattr("accounts.views.send_mail", broken_send_mail)
+        # el envío vive en core.mail (el view ya no elige transporte)
+        monkeypatch.setattr("core.mail.send_mail", broken_send_mail)
 
         response = _request_code(client, test_user.email)
         assert response.status_code == 200

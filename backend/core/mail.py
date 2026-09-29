@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 
 from django.conf import settings
+from django.core.mail import send_mail
 from django.core.mail.backends.smtp import EmailBackend as BaseSMTPEmailBackend
 
 logger = logging.getLogger(__name__)
@@ -34,25 +35,30 @@ class SmtpEmailBackend(BaseSMTPEmailBackend):
             socket.getaddrinfo = original_getaddrinfo
 
 
-def send_brevo_email(*, subject, body, to_email, from_email, from_name):
+def send_brevo_email(*, subject, body, to_email, from_email, from_name, html_body=None):
     """Envía un mail usando la API REST de Brevo (HTTPS/443).
 
     Es el camino recomendado para producción: el SMTP saliente suele estar
     bloqueado en redes de los proveedores (Railway), mientras que HTTPS hacia
     api.brevo.com sale sin problemas.
+
+    `body` es el texto plano (el que se ve en clientes sin HTML) y `html_body`
+    la versión maquetada. Si no se pasa HTML, el mail sale solo en texto.
     """
     api_key = getattr(settings, "BREVO_API_KEY", "")
     if not api_key:
         raise RuntimeError("BREVO_API_KEY no está configurada")
 
-    payload = json.dumps(
-        {
-            "sender": {"email": from_email, "name": from_name},
-            "to": [{"email": to_email}],
-            "subject": subject,
-            "textContent": body,
-        }
-    ).encode("utf-8")
+    message = {
+        "sender": {"email": from_email, "name": from_name},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": body,
+    }
+    if html_body:
+        message["htmlContent"] = html_body
+
+    payload = json.dumps(message).encode("utf-8")
 
     request = urllib.request.Request(
         BREVO_API_URL,
@@ -72,3 +78,54 @@ def send_brevo_email(*, subject, body, to_email, from_email, from_name):
         detail = exc.read().decode("utf-8", errors="replace")
         logger.error("Brevo API respondió %s: %s", exc.code, detail)
         raise
+
+
+def send_app_email(*, subject, body, to_email, html_body=None):
+    """Envía un email de la app por el transporte que haya disponible.
+
+    Con BREVO_API_KEY va por la API HTTPS (producción); sin ella, por el backend
+    de Django configurado en settings (consola en desarrollo).
+
+    Nunca levanta: un fallo del proveedor de email no puede tumbar un endpoint
+    ni un registro de usuario. El error real queda en los logs del backend.
+    """
+    if getattr(settings, "BREVO_API_KEY", ""):
+        try:
+            send_brevo_email(
+                subject=subject,
+                body=body,
+                html_body=html_body,
+                to_email=to_email,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_name=settings.DEFAULT_FROM_NAME,
+            )
+        except Exception:
+            logger.exception("No se pudo enviar por Brevo el mail '%s' a %s", subject, to_email)
+        return
+
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [to_email],
+            html_message=html_body,
+            fail_silently=True,
+        )
+    except Exception:
+        logger.exception("No se pudo enviar el mail '%s' a %s", subject, to_email)
+
+
+def send_templated_email(template, *, to_email, **context):
+    """Arma una plantilla de core.emails y la envía.
+
+    `template` es una función que recibe **context y devuelve
+    (subject, texto plano, html), por ejemplo `welcome_email`.
+    """
+    subject, body, html_body = template(**context)
+    send_app_email(
+        subject=subject,
+        body=body,
+        html_body=html_body,
+        to_email=to_email,
+    )
