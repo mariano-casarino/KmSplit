@@ -9,6 +9,20 @@ en el historial de Git.
 
 ## [Publicado]
 
+## [1.0.1] — 2026-09-29
+
+### Agregado
+
+- **Documentación**: guía de desarrollo (`DEVELOPMENT.md`), este changelog, el
+  esquema relacional como código (`docs/schema.dbml`) y el README al día con el
+  stack real, el deploy y las funcionalidades.
+
+### Cambiado
+
+- **La app deja de ser solo mobile**: en pantallas de ≥768px la columna queda
+  centrada con marco y sombra, la barra de navegación gana esquinas superiores y
+  sombra, y se agrega foco visible para navegar por teclado.
+
 ## [1.0.0] — 2026-09-29
 
 Primera versión estable: el circuito completo de la app (registro, viajes,
@@ -48,10 +62,6 @@ cubierta por tests.
 
 ### Cambiado
 
-- **Responsive de verdad**: la app ya no es solo mobile. En pantallas de ≥768px
-  la columna queda centrada con marco y sombra, la barra de navegación gana
-  esquinas superiores y sombra, y se agrega foco visible para navegación por
-  teclado.
 - El botón de **guardar una edición** se pone verde durante 1s con el texto
   "Cambio guardado" y recién ahí vuelve a la pantalla desde la que se editaba
   (antes en viajes volvía de inmediato).
@@ -146,6 +156,7 @@ MVP completo y desplegable.
 - Detalle de liquidación y botón de volver estilo iOS.
 - Tests automáticos de lógica de negocio y permisos de usuarios.
 
+[1.0.1]: https://github.com/mariano-casarino/KmSplit/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/mariano-casarino/KmSplit/compare/v0.2.1-beta...v1.0.0
 [0.2.1-beta]: https://github.com/mariano-casarino/KmSplit/compare/v0.2.0-beta...v0.2.1-beta
 [0.2.0-beta]: https://github.com/mariano-casarino/KmSplit/compare/v0.1.0-alpha...v0.2.0-beta
