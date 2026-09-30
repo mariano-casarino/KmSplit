@@ -1,8 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { Group, GroupMembership, GroupRole } from '../../core/models/group.model';
 import { FuelType, Vehicle } from '../../core/models/vehicle.model';
@@ -21,6 +28,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
   imports: [CommonModule, ReactiveFormsModule, AvatarComponent, BottomNavComponent, BackButtonComponent, ConfirmDialogComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -67,52 +75,72 @@ profileMember = signal<GroupMembership | null>(null);
 profileMemberUser = signal<User | null>(null);
 loadingProfile = signal(false);
 
-  currentUserId = 0;
+  currentUserId = signal(0);
   myRole = signal<GroupRole | null>(null);
 
   get canManage(): boolean {
     return this.myRole() === 'owner' || this.myRole() === 'admin';
   }
 
-  get activeMembers(): GroupMembership[] {
-    return (this.group()?.members ?? []).filter((m) => m.is_active);
-  }
+  readonly activeMembers = computed<GroupMembership[]>(() =>
+    (this.group()?.members ?? []).filter((m) => m.is_active),
+  );
 
   ngOnInit(): void {
     // Velocidad: usuario y vehículo son independientes -> paralelo. fetchMe es
     // resiliente: si falla, la pantalla del vehículo igual se renderiza.
+    // El grupo va con switchMap para que sea una sola cadena de requests en vez
+    // de dos round-trips en serie: antes se pedía recién después de que llegara
+    // el vehículo, y el loading seguía en true hasta entonces.
     forkJoin({
       user: this.auth.fetchMe().pipe(catchError(() => of(null))),
       vehicle: this.vehicleService.get(this.vehicleId),
-    }).subscribe({
-      next: ({ user, vehicle }) => {
-        if (user) this.currentUserId = user.id;
-        this.vehicle.set(vehicle);
-        this.form.patchValue({
-          name: vehicle.name,
-          fuel_type: vehicle.fuel_type,
-          current_km: vehicle.current_km,
-        });
-        this.loadGroup(vehicle.group);
-      },
-      error: () => {
-        this.errorMessage.set('No pudimos cargar este vehículo.');
-        this.loading.set(false);
-      },
-    });
+    })
+      .pipe(
+        switchMap(({ user, vehicle }) =>
+          this.groupService.get(vehicle.group).pipe(
+            map((group) => ({ group, vehicle, user })),
+            // si el grupo no se puede cargar, igual mostramos el vehículo
+            catchError(() => of({ group: null, vehicle, user })),
+          ),
+        ),
+      )
+      .subscribe({
+        next: ({ group, vehicle, user }) => {
+          if (user) this.currentUserId.set(user.id);
+          this.vehicle.set(vehicle);
+          this.form.patchValue({
+            name: vehicle.name,
+            fuel_type: vehicle.fuel_type,
+            current_km: vehicle.current_km,
+          });
+          if (group) {
+            this.group.set(group);
+            const membership = group.members.find((m) => m.user === user?.id);
+            this.myRole.set(membership?.role ?? null);
+          } else {
+            this.errorMessage.set('No pudimos cargar el grupo.');
+          }
+          this.loading.set(false);
+        },
+        error: () => {
+          this.errorMessage.set('No pudimos cargar este vehículo.');
+          this.loading.set(false);
+        },
+      });
   }
 
+  /** Refresca el grupo después de cambiar un rol o dar de baja a alguien.
+   *  No toca `loading`: acá la pantalla ya está pintada y no queremos parpadear. */
   private loadGroup(groupId: number): void {
     this.groupService.get(groupId).subscribe({
       next: (group) => {
         this.group.set(group);
-        const membership = group.members.find((m) => m.user === this.currentUserId);
+        const membership = group.members.find((m) => m.user === this.currentUserId());
         this.myRole.set(membership?.role ?? null);
-        this.loading.set(false);
       },
       error: () => {
         this.errorMessage.set('No pudimos cargar el grupo.');
-        this.loading.set(false);
       },
     });
   }
@@ -218,7 +246,7 @@ loadingProfile = signal(false);
 
   canModify(member: GroupMembership): boolean {
     const role = this.myRole();
-    if (member.user === this.currentUserId) return false;
+    if (member.user === this.currentUserId()) return false;
     if (role === 'owner') return true;
     if (role === 'admin') return member.role === 'member';
     return false;

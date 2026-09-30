@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /**
@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 @Component({
   selector: 'app-back-button',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   templateUrl: './back-button.component.html',
   styleUrl: './back-button.component.scss',

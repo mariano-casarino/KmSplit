@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
@@ -15,6 +15,7 @@ import { DangerButtonComponent } from '../../../shared/danger-button/danger-butt
 @Component({
   selector: 'app-vehicle-select',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, ArgNumberPipe, ConfirmDialogComponent, DangerButtonComponent],
   templateUrl: './vehicle-select.component.html',
   styleUrl: './vehicle-select.component.scss',

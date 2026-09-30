@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -55,12 +63,21 @@ interface KmGap {
 /** Umbral en días para considerar a un período "atrasado" (acento rojo). */
 const STALE_PERIOD_DAYS = 14;
 
+/** Formateador de fechas reutilizable: `toLocaleDateString` con opciones crea un
+ *  formateador ICU nuevo en cada llamada, y acá se llama una vez por período. */
+const FECHA_CORTA = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit' });
+
+function formatDate(iso: string): string {
+  return FECHA_CORTA.format(new Date(iso));
+}
+
 @Component({
   selector: 'app-history',
   standalone: true,
   imports: [CommonModule, RouterLink, BottomNavComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -95,8 +112,19 @@ export class HistoryComponent implements OnInit, OnDestroy {
    *  esa línea de la lista se pinta de naranja. */
   readonly gapAfterIds = signal<Set<string>>(new Set());
 
-  private currentUserId = 0;
+  private currentUserId = signal(0);
   private currentUserRole = signal<GroupRole | null>(null);
+
+  /** Índice user_id -> nombre del grupo. memberName() se llama una vez por
+   *  registro y una vez por viaje en cada reconstrucción: con `find()` lineal
+   *  sobre los miembros eso es O(registros × miembros). */
+  private readonly memberNames = computed(() => {
+    const mapa = new Map<number, string>();
+    for (const m of this.group()?.members ?? []) {
+      mapa.set(m.user, m.user_name);
+    }
+    return mapa;
+  });
 
   ngOnInit(): void {
     // Si ya estamos en el historial y se toca otra notificación, Angular
@@ -114,7 +142,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
       dashboard: this.vehicleService.dashboard(this.vehicleId),
     }).subscribe({
       next: ({ user, dashboard }) => {
-        if (user) this.currentUserId = user.id;
+        if (user) this.currentUserId.set(user.id);
         const { vehicle, group, trips, fuel_loads, settlements } = dashboard;
         this.vehicle.set(vehicle);
         this.group.set(group);
@@ -149,9 +177,17 @@ export class HistoryComponent implements OnInit, OnDestroy {
     return this.scope === 'week' ? 'Últimos 7 días' : 'Historial';
   }
 
-  get records(): HistoryRecord[] {
+  /**
+   * Los registros de la lista. Es un `computed` y no un getter a propósito: como
+   * getter se recalculaba DOS veces por cada pasada de change detection (el
+   * `@if` de "vacío" y el `@for`), con un filter+map+sort por registro. Ahora se
+   * calcula una sola vez y se reutiliza mientras no cambien los datos de entrada.
+   */
+  readonly records = computed<HistoryRecord[]>(() => {
     const cutoffStr = this.scope === 'week' ? this.sevenDaysAgo() : null;
     const canEditAny = this.currentUserRole() === 'owner' || this.currentUserRole() === 'admin';
+    const currentUserId = this.currentUserId();
+    const memberName = (userId: number) => this.memberNames().get(userId) ?? 'Usuario';
 
     const tripRecords: HistoryRecord[] = this.trips()
       .filter((t) => !cutoffStr || t.trip_date >= cutoffStr)
@@ -160,23 +196,24 @@ export class HistoryComponent implements OnInit, OnDestroy {
         date: t.trip_date,
         sortKey: t.start_km,
         type: 'trip' as const,
-        userName: this.memberName(t.user),
+        userName: memberName(t.user),
         userId: t.user,
         label: `${formatKm(t.start_km)} → ${formatKm(t.end_km)} km / ${formatKm(t.km_traveled)} km`,
         tripId: t.id,
-        clickable: canEditAny || t.user === this.currentUserId,
+        clickable: canEditAny || t.user === currentUserId,
       }));
 
+    const fuelLoadToSettlement = this.fuelLoadToSettlement();
     const fuelRecords: HistoryRecord[] = this.fuelLoads()
       .filter((f) => !cutoffStr || f.load_date >= cutoffStr)
       .map((f) => {
-        const settlementId = this.fuelLoadToSettlement().get(f.id);
+        const settlementId = fuelLoadToSettlement.get(f.id);
         return {
           id: recordKey('fuel', f.id),
           date: f.load_date,
           sortKey: f.odometer_km,
           type: 'fuel' as const,
-          userName: this.memberName(f.loaded_by),
+          userName: memberName(f.loaded_by),
           userId: f.loaded_by,
           label: `$${formatMoney(f.amount)}`,
           settlementId,
@@ -195,15 +232,21 @@ export class HistoryComponent implements OnInit, OnDestroy {
     if (this.filter() === 'viajes') return all.filter((r) => r.type === 'trip');
     if (this.filter() === 'cargas') return all.filter((r) => r.type === 'fuel');
     return all;
-  }
+  });
 
   /**
    * Recorre CADA período (cada liquidación cerrada + el período abierto
    * actual) y detecta los tramos de km que quedaron sin ningún viaje
    * registrado -- independiente del filtro de semana/completo, porque un
    * hueco puede estar en cualquier fecha y no queremos que se escape.
+   *
+   * Este es el cálculo más caro de la pantalla: O(períodos × viajes log viajes),
+   * con un formateo de fecha y un `sort` por período. Antes era un getter y el
+   * template lo pedía 8 veces por cada pasada de change detection (directo y a
+   * través de gapsSummary, remainingGaps, visibleGaps y hasMoreGaps). Con
+   * `computed` se calcula una vez y se reutiliza.
    */
-  get kmGaps(): KmGap[] {
+  readonly kmGaps = computed<KmGap[]>(() => {
     const vehicle = this.vehicle();
     if (!vehicle) return [];
 
@@ -216,12 +259,14 @@ export class HistoryComponent implements OnInit, OnDestroy {
     }
 
     const lastLoad = this.lastFuelLoadDate();
+    const trips = this.trips();
+    const memberName = (userId: number) => this.memberNames().get(userId) ?? 'Usuario';
 
     const periods: PeriodDef[] = this.settlements()
       .slice()
       .sort((a, b) => a.period_start_km - b.period_start_km)
       .map((s) => ({
-        label: `Liquidación del ${this.formatDate(s.created_at)}`,
+        label: `Liquidación del ${formatDate(s.created_at)}`,
         start: s.period_start_km,
         end: s.period_end_km,
         settlementId: s.id,
@@ -245,7 +290,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
       // a los viajes creados DESPUÉS de haber liquidado el período; los que
       // estaban en el período abierto al momento de la carga quedan con
       // settlement=null y, si filtrásemos por FK, reportarían huecos falsos.
-      const periodTrips = this.trips()
+      const periodTrips = trips
         .filter((t) =>
           period.end === null
             ? t.end_km > period.start
@@ -271,12 +316,12 @@ export class HistoryComponent implements OnInit, OnDestroy {
             gapEndKm: clipStart,
             gapSize: clipStart - cursor,
             before: lastTripName ?? 'el inicio del período',
-            after: this.memberName(trip.user),
+            after: memberName(trip.user),
             urgent: period.urgent,
           });
         }
         cursor = Math.max(cursor, clipEnd);
-        lastTripName = this.memberName(trip.user);
+        lastTripName = memberName(trip.user);
       }
 
       if (period.end !== null && cursor < period.end) {
@@ -297,39 +342,38 @@ export class HistoryComponent implements OnInit, OnDestroy {
     // odómetro actual): es el que el conductor ve hoy y el que queda visible
     // por defecto.
     return gaps.sort((a, b) => b.gapStartKm - a.gapStartKm);
-  }
+  });
 
   /** Total de km que quedaron sin registrar (suma de todos los huecos). */
-  get gapsTotalKm(): number {
-    return this.kmGaps.reduce((acc, g) => acc + g.gapSize, 0);
-  }
+  readonly gapsTotalKm = computed(() =>
+    this.kmGaps().reduce((acc, g) => acc + g.gapSize, 0),
+  );
 
   /** Cantidad de períodos distintos con huecos, para el contador del header. */
-  get gapsPeriodCount(): number {
-    return new Set(this.kmGaps.map((g) => g.periodLabel)).size;
-  }
+  readonly gapsPeriodCount = computed(
+    () => new Set(this.kmGaps().map((g) => g.periodLabel)).size,
+  );
 
   /** "X km sin registrar" o "X km sin registrar en N períodos" según cuántos. */
-  get gapsSummary(): string {
-    const base = `${formatKm(this.gapsTotalKm)} km sin registrar`;
-    return this.gapsPeriodCount > 1 ? `${base} en ${this.gapsPeriodCount} períodos` : base;
-  }
-
-  /** Huecos que siguen ocultos detrás del "Ver más". */
-  get remainingGaps(): number {
-    return this.kmGaps.length - this.visibleGaps.length;
-  }
+  readonly gapsSummary = computed(() => {
+    const base = `${formatKm(this.gapsTotalKm())} km sin registrar`;
+    const count = this.gapsPeriodCount();
+    return count > 1 ? `${base} en ${count} períodos` : base;
+  });
 
   /** El hueco visible por defecto: uno solo, el más urgente. "Ver más"
    *  despliega la lista completa en el mismo lugar, sin navegar. */
-  get visibleGaps(): KmGap[] {
-    return this.showAllGaps() ? this.kmGaps : this.kmGaps.slice(0, 1);
-  }
+  readonly visibleGaps = computed<KmGap[]>(() =>
+    this.showAllGaps() ? this.kmGaps() : this.kmGaps().slice(0, 1),
+  );
+
+  /** Huecos que siguen ocultos detrás del "Ver más". */
+  readonly remainingGaps = computed(
+    () => this.kmGaps().length - this.visibleGaps().length,
+  );
 
   /** Hay huecos ocultos tras el "ver más"? */
-  get hasMoreGaps(): boolean {
-    return this.kmGaps.length > 1;
-  }
+  readonly hasMoreGaps = computed(() => this.kmGaps().length > 1);
 
   toggleAllGaps(): void {
     this.showAllGaps.update((v) => !v);
@@ -345,7 +389,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   memberName(userId: number): string {
-    return this.group()?.members.find((m) => m.user === userId)?.user_name ?? 'Usuario';
+    return this.memberNames().get(userId) ?? 'Usuario';
   }
 
   onRecordClick(record: HistoryRecord): void {
@@ -375,7 +419,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const key = resolveHighlightKey(request, this.records);
+    const key = resolveHighlightKey(request, this.records());
     if (key) {
       this.flashHighlight.flash(key);
       this.scrollToRecord(key);
@@ -444,11 +488,14 @@ export class HistoryComponent implements OnInit, OnDestroy {
     return (Date.now() - t) / 86_400_000;
   }
 
-  /** La fecha de la última carga de nafta: marca el nacimiento del período abierto. */
-  private lastFuelLoadDate(): string | null {
-    const dates = this.fuelLoads().map((f) => f.load_date).sort();
+  /** La fecha de la última carga de nafta: marca el nacimiento del período abierto.
+   *  Es un `computed` porque se usa para evaluar TODOS los períodos. */
+  private readonly lastFuelLoadDate = computed<string | null>(() => {
+    const dates = this.fuelLoads()
+      .map((f) => f.load_date)
+      .sort();
     return dates[dates.length - 1] ?? null;
-  }
+  });
 
   /** Un período está "atrasado" cuando pasa el umbral sin cerrarse:
    *  el abierto lleva +STALE_PERIOD_DAYS desde la última carga, o una
@@ -459,10 +506,5 @@ export class HistoryComponent implements OnInit, OnDestroy {
     }
     const s = this.settlements().find((x) => x.id === settlementId);
     return !!s && s.status === 'pendiente' && this.daysSince(s.created_at) > STALE_PERIOD_DAYS;
-  }
-
-  private formatDate(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
   }
 }

@@ -189,12 +189,13 @@ class VehicleViewSet(viewsets.ModelViewSet):
         cache_key = services.dashboard_cache_key(vehicle.id)
         cached = cache.get(cache_key)
         if cached is not None:
-            return Response(cached)
+            return self._dashboard_response(cached)
 
-        group = Group.objects.filter(
-            members__user=request.user, members__is_active=True
-        ).distinct().select_related().first()
-        # Si el vehicle pertenece a otro grupo del user, usar ese
+        # El grupo es el del vehículo: ya sabemos que el user es miembro
+        # (get_object() filtró por group__members__user). Antes se hacía una
+        # consulta por el grupo del usuario y se pisaba con esta en todos los
+        # casos, porque vehicle.group_id siempre está seteado.
+        group = None
         if vehicle.group_id:
             group = Group.objects.filter(id=vehicle.group_id).prefetch_related(
                 "members", "members__user"
@@ -218,7 +219,18 @@ class VehicleViewSet(viewsets.ModelViewSet):
             "settlements": SettlementSerializer(settlements, many=True).data,
         }
         cache.set(cache_key, payload, timeout=services.DASHBOARD_CACHE_TTL)
-        return Response(payload)
+        return self._dashboard_response(payload)
+
+    def _dashboard_response(self, payload):
+        """El dashboard es específico del usuario (get_object() ya filtró por
+        pertenencia al grupo), así que NUNCA puede ir a una cache compartida: de
+        ahí `private`. Y `no-cache` no significa "no guardar", sino "guardá pero
+        revalidá": combinado con el ETag que arma ConditionalGetMiddleware, las
+        navegaciones repetidas (resumen -> historial -> liquidación) bajan un
+        304 sin cuerpo en vez de todo el payload."""
+        response = Response(payload)
+        response["Cache-Control"] = "private, no-cache"
+        return response
 
     def perform_create(self, serializer):
         group = serializer.validated_data["group"]

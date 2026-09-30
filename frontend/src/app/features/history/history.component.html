@@ -10,12 +10,12 @@
   } @else if (errorMessage()) {
     <p class="field-error">{{ errorMessage() }}</p>
   } @else {
-    @if (kmGaps.length > 0) {
+    @if (kmGaps().length > 0) {
       <div class="gaps-section">
         <p class="gaps-title"> Km sin registrar </p>
-        <p class="gaps-summary">{{ gapsSummary }}</p>
+        <p class="gaps-summary">{{ gapsSummary() }}</p>
         <div class="gaps-list">
-          @for (gap of visibleGaps; track gap.id) {
+          @for (gap of visibleGaps(); track gap.id) {
             <div class="gap-item" [class.urgent]="gap.urgent">
               <div class="gap-main">
                 <p class="gap-range">
@@ -31,9 +31,9 @@
             </div>
           }
         </div>
-        @if (hasMoreGaps) {
+        @if (hasMoreGaps()) {
           <button class="gap-toggle" type="button" (click)="toggleAllGaps()">
-            {{ showAllGaps() ? 'Ver menos ▴' : 'Ver ' + remainingGaps + ' más ▾' }}
+            {{ showAllGaps() ? 'Ver menos ▴' : 'Ver ' + remainingGaps() + ' más ▾' }}
           </button>
         }
       </div>
@@ -51,11 +51,11 @@
       </button>
     </div>
 
-    @if (records.length === 0) {
+    @if (records().length === 0) {
       <p class="muted empty-message">No hay registros para mostrar acá.</p>
     } @else {
       <div class="records-list">
-        @for (record of records; track record.id) {
+        @for (record of records(); track record.id) {
           <button
             class="record-row"
             type="button"

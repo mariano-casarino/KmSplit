@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -18,6 +18,7 @@ import { retryTransient } from '../../../shared/utils/retry-transient.util';
 @Component({
   selector: 'app-vehicle-home',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     RouterLink,
@@ -47,7 +48,7 @@ export class VehicleHomeComponent implements OnInit {
   errorMessage = signal<string | null>(null);
   photoSaving = signal(false);
   photoMessage = signal<string | null>(null);
-  currentUserId = 0;
+  currentUserId = signal(0);
   myRole = signal<GroupRole | null>(null);
 
   ngOnInit(): void {
@@ -66,7 +67,7 @@ export class VehicleHomeComponent implements OnInit {
       vehicle: this.vehicleService.get(this.vehicleId).pipe(retryTransient(3)),
     }).subscribe({
       next: ({ user, vehicle }) => {
-        if (user) this.currentUserId = user.id;
+        if (user) this.currentUserId.set(user.id);
         this.vehicleService.setLastVehicleId(vehicle.id);
         // el grupo del vehículo pasa a ser el "activo" para que el botón
         // volver (‹) te devuelva siempre a la lista de su grupo
@@ -76,7 +77,7 @@ export class VehicleHomeComponent implements OnInit {
         this.groupService.get(vehicle.group).subscribe({
           next: (group) => {
             this.group.set(group);
-            const membership = group.members.find((m) => m.user === this.currentUserId);
+            const membership = group.members.find((m) => m.user === this.currentUserId());
             this.myRole.set(membership?.role ?? null);
             this.loading.set(false);
           },
@@ -115,7 +116,7 @@ export class VehicleHomeComponent implements OnInit {
     this.photoMessage.set(null);
     this.errorMessage.set(null);
 
-    fileToCompressedDataUri(file)
+    fileToCompressedDataUri(file, 'vehiculo')
       .then((dataUri) => this.savePhoto(dataUri))
       .catch((err: Error) => {
         this.photoSaving.set(false);

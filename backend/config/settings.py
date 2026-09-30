@@ -38,6 +38,10 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # Va después de CommonMiddleware: agrega ETag/Last-Modified a los GET y
+    # responde 304 si el cliente manda If-None-Match. Sin esto, un
+    # Cache-Control: no-cache no ahorra nada porque no hay con qué revalidar.
+    'django.middleware.http.ConditionalGetMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

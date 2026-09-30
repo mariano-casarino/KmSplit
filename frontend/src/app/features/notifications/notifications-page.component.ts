@@ -1,5 +1,5 @@
 import { CommonModule, Location } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { Notification } from '../../core/models/notification.model';
@@ -15,6 +15,7 @@ import { BackButtonComponent } from '../../shared/back-button/back-button.compon
 @Component({
   selector: 'app-notifications-page',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, BackButtonComponent],
   templateUrl: './notifications-page.component.html',
   styleUrl: './notifications-page.component.scss',

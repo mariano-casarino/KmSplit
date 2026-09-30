@@ -152,7 +152,7 @@
       <p class="field-error">{{ memberActionError() }}</p>
     }
     <div class="members-list">
-      @for (member of activeMembers; track member.id) {
+      @for (member of activeMembers(); track member.id) {
         <div class="member-row" (click)="openMemberProfile(member)">
           <app-avatar
             class="member-avatar"
@@ -164,7 +164,7 @@
           <div class="member-info">
             <span class="member-name">
               {{ member.user_name }}
-              @if (member.user === currentUserId) {
+              @if (member.user === currentUserId()) {
                 <span class="muted">(vos)</span>
               }
             </span>
@@ -242,7 +242,7 @@
         <p class="muted member-profile-email">{{ member.user_email }}</p>
         <div class="member-profile-badge">
           <span class="role-badge" [class]="'role-' + member.role">{{ roleLabel(member.role) }}</span>
-          @if (member.user === currentUserId) {
+          @if (member.user === currentUserId()) {
             <span class="muted">(vos)</span>
           }
         </div>

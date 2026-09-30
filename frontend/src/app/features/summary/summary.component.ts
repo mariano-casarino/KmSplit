@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -11,6 +19,7 @@ import { Vehicle } from '../../core/models/vehicle.model';
 import { AuthService } from '../../core/services/auth.service';
 import { VehicleService } from '../../core/services/vehicle.service';
 import { BottomNavComponent } from '../../shared/bottom-nav/bottom-nav.component';
+import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { NotificationsBellComponent } from '../../shared/notifications-bell/notifications-bell.component';
 import { ArgNumberPipe } from '../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
@@ -47,9 +56,18 @@ interface RecentRecord {
 @Component({
   selector: 'app-summary',
   standalone: true,
-  imports: [CommonModule, RouterLink, BottomNavComponent, NotificationsBellComponent, ArgNumberPipe, BackButtonComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ArgNumberPipe,
+    BackButtonComponent,
+    BottomNavComponent,
+    AvatarComponent,
+    NotificationsBellComponent,
+  ],
   templateUrl: './summary.component.html',
   styleUrl: './summary.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SummaryComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -68,7 +86,7 @@ export class SummaryComponent implements OnInit, OnDestroy {
   trips = signal<Trip[]>([]);
   fuelLoads = signal<FuelLoad[]>([]);
   settlements = signal<Settlement[]>([]);
-  fuelLoadToSettlement = new Map<number, number>();
+  fuelLoadToSettlement = signal<Map<number, number>>(new Map());
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   currentUserRole = signal<GroupRole | null>(null);
@@ -87,8 +105,19 @@ export class SummaryComponent implements OnInit, OnDestroy {
    *  esa línea de la lista se pinta de naranja. */
   readonly gapAfterIds = signal<Set<string>>(new Set());
 
-  private currentUserId = 0;
+  private currentUserId = signal(0);
   private periodDays: Record<PeriodKey, number> = { semana: 7, mes: 30, '3meses': 90 };
+
+  /** Índice user_id -> nombre del grupo: memberName() se llama una vez por
+   *  registro en cada reconstrucción, y con `find()` lineal eso es
+   *  O(registros × miembros). */
+  private readonly memberNames = computed(() => {
+    const mapa = new Map<number, string>();
+    for (const m of this.group()?.members ?? []) {
+      mapa.set(m.user, m.user_name);
+    }
+    return mapa;
+  });
 
   ngOnInit(): void {
     // Si ya estamos en el resumen y se toca otra notificación, Angular
@@ -113,9 +142,11 @@ export class SummaryComponent implements OnInit, OnDestroy {
         this.trips.set(trips);
         this.fuelLoads.set(fuel_loads);
         this.settlements.set(settlements);
-        settlements.forEach((s) => this.fuelLoadToSettlement.set(s.fuel_load, s.id));
+        this.fuelLoadToSettlement.set(
+          new Map(settlements.map((s) => [s.fuel_load, s.id])),
+        );
 
-        if (user) this.currentUserId = user.id;
+        if (user) this.currentUserId.set(user.id);
         const membership = user
           ? group.members.find((m) => m.user === user.id)
           : undefined;
@@ -157,33 +188,40 @@ export class SummaryComponent implements OnInit, OnDestroy {
 
   /** Últimos registros con la misma forma y reglas de navegación que el
    *  historial: orden por km (el más reciente, más cerca del odómetro, va
-   *  primero). */
-  get recentRecords(): RecentRecord[] {
+   *  primero).
+   *
+   *  `computed` y no getter: el template lo pedía 2 veces por pasada de change
+   *  detection (el `@if` de vacío y el `@for`) y cada vez armaba un map+sort de
+   *  todos los viajes y todas las cargas. */
+  readonly recentRecords = computed<RecentRecord[]>(() => {
     const role = this.currentUserRole();
     const canEditAny = role === 'owner' || role === 'admin';
+    const currentUserId = this.currentUserId();
+    const memberName = (userId: number) => this.memberNames().get(userId) ?? 'Usuario';
 
     const tripRecords: RecentRecord[] = this.trips().map((t) => ({
       id: recordKey('trip', t.id),
       date: t.trip_date,
       sortKey: t.start_km,
       type: 'trip' as const,
-      userName: this.memberName(t.user),
+      userName: memberName(t.user),
       userId: t.user,
       label: `${formatKm(t.start_km)} → ${formatKm(t.end_km)} km / ${formatKm(t.km_traveled)} km`,
       tripId: t.id,
       // un miembro puede editar sus propios viajes (igual que en el historial),
       // aunque no pueda tocar los de los demás
-      clickable: canEditAny || t.user === this.currentUserId,
+      clickable: canEditAny || t.user === currentUserId,
     }));
 
+    const fuelLoadToSettlement = this.fuelLoadToSettlement();
     const fuelRecords: RecentRecord[] = this.fuelLoads().map((f) => {
-      const settlementId = this.fuelLoadToSettlement.get(f.id);
+      const settlementId = fuelLoadToSettlement.get(f.id);
       return {
         id: recordKey('fuel', f.id),
         date: f.load_date,
         sortKey: f.odometer_km,
         type: 'fuel' as const,
-        userName: this.memberName(f.loaded_by),
+        userName: memberName(f.loaded_by),
         userId: f.loaded_by,
         label: `$${formatMoney(f.amount)}`,
         settlementId,
@@ -197,7 +235,7 @@ export class SummaryComponent implements OnInit, OnDestroy {
         return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
       })
       .slice(0, RECENT_RECORDS_LIMIT);
-  }
+  });
 
   /**
    * Al llegar desde una notificación (?highlight=trip-12) se resalta ese
@@ -212,7 +250,7 @@ export class SummaryComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const key = resolveHighlightKey(request, this.recentRecords);
+    const key = resolveHighlightKey(request, this.recentRecords());
     if (key) {
       this.flashHighlight.flash(key);
       this.scrollToRecord(key);
@@ -278,7 +316,11 @@ export class SummaryComponent implements OnInit, OnDestroy {
     }
   }
 
-  get usageByMember() {
+  /** Km por integrante en el período elegido (semana / mes / 3 meses).
+   *
+   *  `computed` y no getter: el template lo pedía 3 veces por pasada de change
+   *  detection y cada llamada recorría TODOS los viajes y armaba un Map. */
+  readonly usageByMember = computed(() => {
     const days = this.periodDays[this.selectedPeriod()];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
@@ -306,10 +348,10 @@ export class SummaryComponent implements OnInit, OnDestroy {
         color: avatarColor(String(m.user)),
       };
     });
-  }
+  });
 
   memberName(userId: number): string {
-    return this.group()?.members.find((m) => m.user === userId)?.user_name ?? 'Usuario';
+    return this.memberNames().get(userId) ?? 'Usuario';
   }
 
   barHeight(percentage: number): number {

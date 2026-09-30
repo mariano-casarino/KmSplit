@@ -46,11 +46,11 @@
     }
 
     <div class="section-title">Últimos registros</div>
-    @if (recentRecords.length === 0) {
+    @if (recentRecords().length === 0) {
       <p class="muted">Todavía no hay registros en este vehículo.</p>
     } @else {
       <div class="records-list">
-        @for (record of recentRecords; track record.id) {
+        @for (record of recentRecords(); track record.id) {
           <button
             class="record-row"
             type="button"
@@ -111,12 +111,12 @@
       </button>
     </div>
 
-    @if (usageByMember.length === 0) {
+    @if (usageByMember().length === 0) {
       <p class="muted">No hay integrantes activos.</p>
     } @else {
       <div class="chart-box">
         <div class="bars">
-          @for (item of usageByMember; track item.userId) {
+          @for (item of usageByMember(); track item.userId) {
             <div class="bar-col">
               <div class="bar" [style.height.px]="barHeight(item.percentage)" [style.background]="item.color"></div>
               <span class="bar-label">{{ item.name }}</span>
@@ -124,7 +124,7 @@
           }
         </div>
         <div class="legend">
-          @for (item of usageByMember; track item.userId) {
+          @for (item of usageByMember(); track item.userId) {
             <span>
               <span class="dot" [style.background]="item.color"></span>
               {{ item.name }} {{ item.percentage }}%

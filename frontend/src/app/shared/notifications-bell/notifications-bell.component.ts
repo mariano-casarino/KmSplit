@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { Notification } from '../../core/models/notification.model';
 import { NotificationService } from '../../core/services/notification.service';
@@ -18,6 +18,7 @@ const PANEL_ITEMS = 3;
 @Component({
   selector: 'app-notifications-bell',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   templateUrl: './notifications-bell.component.html',
   styleUrl: './notifications-bell.component.scss',

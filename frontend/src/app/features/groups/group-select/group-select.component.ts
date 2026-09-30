@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { Group } from '../../../core/models/group.model';
@@ -14,6 +14,7 @@ type Feedback = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-group-select',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, AvatarComponent],
   templateUrl: './group-select.component.html',
   styleUrl: './group-select.component.scss',
@@ -30,6 +31,25 @@ export class GroupSelectComponent {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   selectingId = signal<number | null>(null);
+
+  /** Último acceso por grupo, leído de localStorage UNA sola vez. Antes
+   *  lastAccessLabel() hacía getItem + JSON.parse por grupo en cada pasada de
+   *  change detection (es una lectura síncrona de disco, y el template la pide
+   *  una vez por grupo dentro de un @for). */
+  private lastAccess = signal<Map<number, number>>(this.readLastAccess());
+
+  /** Integrantes activos por grupo: el template llama a memberCount() dos veces
+   *  por fila y antes filtraba el array de miembros en cada llamada. */
+  readonly activeMemberCounts = computed(() => {
+    const counts = new Map<number, number>();
+    for (const group of this.groups()) {
+      counts.set(
+        group.id,
+        group.members.reduce((acc, m) => acc + (m.is_active ? 1 : 0), 0),
+      );
+    }
+    return counts;
+  });
 
   photoEditor = signal<Group | null>(null);
   photoPreview = signal<string | null>(null);
@@ -87,30 +107,37 @@ export class GroupSelectComponent {
   }
 
   private saveLastAccess(groupId: number): void {
+    const map = new Map(this.lastAccess());
+    map.set(groupId, Date.now());
+    this.lastAccess.set(map);
     try {
-      const raw = localStorage.getItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY);
-      const map = raw ? JSON.parse(raw) : {};
-      map[groupId] = Date.now();
-      localStorage.setItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY, JSON.stringify(map));
+      localStorage.setItem(
+        GroupSelectComponent.LAST_GROUP_ACCESS_KEY,
+        JSON.stringify(Object.fromEntries(map)),
+      );
     } catch {
       /* localStorage no disponible: solo se pierde el "último acceso" */
     }
   }
 
-  private lastAccessTs(groupId: number): number | null {
+  private readLastAccess(): Map<number, number> {
     try {
       const raw = localStorage.getItem(GroupSelectComponent.LAST_GROUP_ACCESS_KEY);
-      if (!raw) return null;
-      const map = JSON.parse(raw);
-      return typeof map[groupId] === 'number' ? map[groupId] : null;
+      if (!raw) return new Map();
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const map = new Map<number, number>();
+      for (const [key, value] of Object.entries(parsed)) {
+        if (typeof value === 'number') map.set(Number(key), value);
+      }
+      return map;
     } catch {
-      return null;
+      return new Map();
     }
   }
 
   lastAccessLabel(group: Group): string {
-    const ts = this.lastAccessTs(group.id);
-    if (ts === null) return 'Último acceso';
+    const ts = this.lastAccess().get(group.id);
+    if (ts === null || ts === undefined) return 'Último acceso';
     const days = Math.floor((Date.now() - ts) / 86_400_000);
     if (days <= 0) return 'Últ. acceso: hoy';
     if (days === 1) return 'Últ. acceso: ayer';
@@ -118,7 +145,7 @@ export class GroupSelectComponent {
   }
 
   memberCount(group: Group): number {
-    return group.members.filter((m) => m.is_active).length;
+    return this.activeMemberCounts().get(group.id) ?? 0;
   }
 
   myRole(group: Group): string {
@@ -152,7 +179,7 @@ export class GroupSelectComponent {
     this.photoFeedback.set(null);
     this.clearPhotoTimer();
 
-    fileToCompressedDataUri(file)
+    fileToCompressedDataUri(file, 'grupo')
       .then((dataUri) => {
         this.photoPreview.set(dataUri);
         this.savePhoto(dataUri);

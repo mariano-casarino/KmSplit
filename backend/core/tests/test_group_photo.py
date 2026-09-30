@@ -1,6 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
 
+from core.validators import MAX_IMAGE_DATA_URI_BYTES
+
 pytestmark = pytest.mark.django_db
 
 # 1x1 PNG transparente en base64 (data URI válida)
@@ -40,7 +42,7 @@ class TestGroupPhoto:
 
     def test_photo_url_rejects_oversized_payload(self, family):
         client = auth_client(family["owner"])
-        huge = "data:image/png;base64," + "A" * (4 * 1024 * 1024)
+        huge = "data:image/png;base64," + "A" * (MAX_IMAGE_DATA_URI_BYTES + 1)
         response = client.patch(f"/api/groups/{family['group'].id}/", {"avatar_url": huge})
         assert response.status_code == 400
 
