@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -32,6 +32,7 @@ function calcularKmFinal(kmReferencia: number, digitos: string): number {
 @Component({
   selector: 'app-trip-form',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, BottomNavComponent, NotificationsBellComponent, ArgNumberPipe, BackButtonComponent],
   templateUrl: './trip-form.component.html',
   styleUrl: './trip-form.component.scss',

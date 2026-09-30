@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -17,6 +17,7 @@ type Feedback = { type: 'success' | 'error'; text: string } | null;
 @Component({
   selector: 'app-profile',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, AvatarComponent, BackButtonComponent, ConfirmDialogComponent, DangerButtonComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
@@ -133,7 +134,7 @@ export class ProfileComponent {
     this.avatarFeedback.set(null);
     this.clearAvatarTimer();
 
-    fileToCompressedDataUri(file)
+    fileToCompressedDataUri(file, 'avatar')
       .then((dataUri) => this.saveAvatar(dataUri))
       .catch((err: Error) => {
         this.avatarSaving.set(false);

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 const RESULT_KEY = 'kmsplit_google_credential';
@@ -16,6 +16,7 @@ const NONCE_KEY = 'kmsplit_google_nonce';
 @Component({
   selector: 'app-google-auth-return',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <div class="screen">
