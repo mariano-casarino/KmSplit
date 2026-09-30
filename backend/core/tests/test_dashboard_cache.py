@@ -91,3 +91,67 @@ def test_dashboard_reflects_the_new_date_after_editing_a_fuel_load(family, vehic
 
     after = client.get(f"/api/vehicles/{vehicle.id}/dashboard/")
     assert after.data["fuel_loads"][0]["load_date"] == "2026-09-05"
+
+
+def test_dashboard_is_never_cacheable_by_a_shared_cache(family, vehicle):
+    """El payload depende de quién pregunta (get_object() filtra por
+    pertenencia al grupo): si un proxy/CDN lo guardara, un usuario podría ver
+    los datos de otro. Por eso `private`."""
+    client = auth_client(family["owner"])
+    response = client.get(f"/api/vehicles/{vehicle.id}/dashboard/")
+    assert response.status_code == 200
+    assert response["Cache-Control"] == "private, no-cache"
+
+
+def test_dashboard_answers_304_when_nothing_changed(family, vehicle):
+    """Con `no-cache` + ETag, la segunda visita no descarga el payload: pide
+    revalidación y recibe 304 sin cuerpo."""
+    client = auth_client(family["owner"])
+    first = client.get(f"/api/vehicles/{vehicle.id}/dashboard/")
+    etag = first["ETag"]
+    assert etag, "ConditionalGetMiddleware debería agregar el ETag"
+
+    second = client.get(
+        f"/api/vehicles/{vehicle.id}/dashboard/",
+        HTTP_IF_NONE_MATCH=etag,
+    )
+    assert second.status_code == 304
+    assert not second.content
+
+
+def test_dashboard_sends_full_payload_when_it_changed(family, vehicle):
+    """Si el ETag no cambió porque el contenido tampoco, 304; pero apenas se
+    agrega un viaje el ETag tiene que ser distinto y volver 200."""
+    client = auth_client(family["owner"])
+    warm = client.get(f"/api/vehicles/{vehicle.id}/dashboard/")
+    warm_etag = warm["ETag"]
+
+    assert (
+        client.get(
+            f"/api/vehicles/{vehicle.id}/dashboard/",
+            HTTP_IF_NONE_MATCH=warm_etag,
+        ).status_code
+        == 304
+    )
+
+    created = client.post(
+        "/api/trips/",
+        {
+            "vehicle": vehicle.id,
+            "trip_date": "2026-09-01",
+            "start_km": 100,
+            "end_km": 200,
+        },
+        format="json",
+    )
+    assert created.status_code == 201, created.data
+
+    # el POST invalidó la cache de Django, así que el payload se rearma: el
+    # ETag anterior ya no sirve y tiene que bajar el cuerpo entero.
+    changed = client.get(
+        f"/api/vehicles/{vehicle.id}/dashboard/",
+        HTTP_IF_NONE_MATCH=warm_etag,
+    )
+    assert changed.status_code == 200
+    assert changed["ETag"] != warm_etag
+    assert len(changed.data["trips"]) == 1

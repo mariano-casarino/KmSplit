@@ -17,9 +17,38 @@ en el historial de Git.
   campana y poder agregar la app a la pantalla de inicio.
 - `FRONTEND_URL` en el backend: los emails arman sus links con la URL pública
   del frontend (en producción, la de Vercel).
+- **Comando `recompress_images`** para las fotos que ya están guardadas: las
+  vuelve a pasar por los presets (`--dry-run` para ver el ahorro antes de
+  tocar nada). También avisa qué foto no se pudo procesar y sigue con las demás.
+- El backend **rechaza data URIs de más de 256 KiB**: es el techo que puede
+  romper un request, y la causa raíz de que una pantalla de detalle bajara
+  ~700 KB.
 
 ### Cambiado
 
+- **Las fotos se guardan comprimidas y con tamaño fijo** según para qué se usan:
+  avatar 320 px/40 KiB, foto de grupo 480 px/80 KiB, foto de vehículo
+  900 px/180 KiB. Antes se guardaba la foto tal cual la sacaba del teléfono y
+  viajaba completa dentro de cada respuesta de la API, así que el avatar
+  (que viene en `/auth/me`, en el grupo y en cada miembro del dashboard) se
+  descargaba una y otra vez en todas las pantallas. Con el recorte, el payload
+  del dashboard de un vehículo bajó de ~694 KB a ~90 KB.
+- **`ChangeDetectionStrategy.OnPush` en todas las vistas**, con los cálculos
+  caros del historial, el resumen y el selector de grupos pasados a `computed`
+  (el índice de km sin registrar, los nombres de los miembros, los contadores
+  por período y la cantidad de integrantes se calculaban en cada pasada de
+  change detection, y el template los pedía varias veces cada una).
+- El historial y el resumen dejar de armar dos requests en serie: el grupo se
+  encadena al vehículo en un solo `switchMap` en vez de pedirlo recién después
+  de que llegara el vehículo.
+- El selector de grupos **lee el "último acceso" del `localStorage` una sola
+  vez** (hacía un `getItem` + `JSON.parse` por grupo en cada render) y precalcula
+  la cantidad de integrantes activos.
+- El `avatar` compartido ahora usa inputs de señal: las iniciales y el color
+  **se quedaban con los del primer render** aunque cambiaran los datos.
+- El dashboard **responde 304 sin cuerpo** si no cambió (ETag + `private,
+  no-cache`): al ir del resumen al historial y volver, ya no se descarga el
+  payload entero. `private` porque la respuesta es por usuario.
 - **Los emails ahora salen en HTML maquetado** (tabla + estilos inline, la
   paleta de la app), no solo en texto plano: el código de recuperación va en
   una caja destacada con el link a la pantalla, y el botón tiene fallback VML
@@ -29,6 +58,13 @@ en el historial de Git.
 - Un único punto de envío (`core.mail.send_app_email`) elige Brevo o SMTP y
   **nunca rompe el endpoint**: si el proveedor falla, el alta de usuario o el
   pedido de código se completan igual.
+
+### Corregido
+
+- La pantalla de administration pedía el grupo en un segundo round-trip después
+  de recibir el vehículo, dejando el spinner más tiempo del necesario.
+- La tab activa de la barra inferior se actualizaba por casualidad (leía
+  `router.url`, que no es reactivo); ahora sigue a la navegación.
 
 ## [Publicado]
 
