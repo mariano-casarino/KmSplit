@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Si empujás dos commits seguidos a la misma rama, el run anterior se cancela:
+# solo te interesa el resultado del último código.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+
+    # Postgres real, no sqlite. Es lo que corre en producción y encima los
+    # tests hoy pasan contra postgres en docker-compose; correrlos contra otro
+    # motor daría una confianza falsa.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kmsplit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      # El Dockerfile corre `migrate` en cada arranque, así que un cambio de
+      # modelo sin migración NO se rompe en el deploy: se aplica a medias y la
+      # app queda pidiendo columnas que no existen. Este paso lo detecta antes.
+      - name: Chequear migraciones al día
+        env:
+          SECRET_KEY: dummy-para-ci-no-usar-en-produccion
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kmsplit
+          ALLOWED_HOSTS: localhost
+          CORS_ALLOWED_ORIGINS: http://localhost:4200
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Correr tests
+        env:
+          # Todas obligatorias en settings.py, ninguna es un secreto: en CI el
+          # backend nunca envía emails reales (conftest.py fuerza el backend
+          # locmem) ni sirve tráfico. Sin REDIS_URL la cache cae a locmem.
+          SECRET_KEY: dummy-para-ci-no-usar-en-produccion
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kmsplit
+          ALLOWED_HOSTS: localhost
+          CORS_ALLOWED_ORIGINS: http://localhost:4200
+        run: python -m pytest -q
+
+  frontend:
+    name: Frontend (vitest + build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Correr tests
+        run: npm test
+
+      # `ng test` no compila la app: una sintaxis rota en un template o un
+      # signal mal usado en un .html no falla vitest, revienta acá. Un error de
+      # ese tipo llegó a producción más de una vez.
+      - name: Build
+        run: npm run build
