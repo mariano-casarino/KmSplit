@@ -62,7 +62,6 @@ interface RecentRecord {
     ArgNumberPipe,
     BackButtonComponent,
     BottomNavComponent,
-    AvatarComponent,
     NotificationsBellComponent,
   ],
   templateUrl: './summary.component.html',

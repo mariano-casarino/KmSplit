@@ -52,8 +52,10 @@ export class TripFormComponent implements OnInit {
    *  atrás devuelva al form de viaje y no a la lista de vehículos. */
   profileBack = `/vehiculo/${this.vehicleId}/viaje`;
 
-  /** Km inicial por defecto para un registro nuevo (último km del vehículo). */
+  /** Km inicial por defecto para un registro nuevo (último km registrado). */
   private defaultStartKm = 0;
+  /** Máximo km registrado en el vehículo, independiente de huecos que se estén llenando. */
+  private maxRegisteredKm = 0;
 
   loading = signal(false);
   loadingContext = signal(true);
@@ -106,9 +108,12 @@ export class TripFormComponent implements OnInit {
           (latest, t) => (!latest || t.id > latest.id ? t : latest),
           null,
         );
+        this.maxRegisteredKm = lastRegisteredTrip
+          ? lastRegisteredTrip.end_km
+          : vehicle.current_km;
         this.defaultStartKm =
           gapStartKm ??
-          (lastRegisteredTrip ? lastRegisteredTrip.end_km : vehicle.current_km);
+          this.maxRegisteredKm;
         this.form.patchValue({ start_km: this.defaultStartKm });
 
         if (gapStartKm !== null && gapEndKm !== null && gapEndKm > gapStartKm) {
@@ -214,7 +219,10 @@ export class TripFormComponent implements OnInit {
           (latest, t) => (!latest || t.id > latest.id ? t : latest),
           null,
         );
-        if (lastRegisteredTrip) this.defaultStartKm = lastRegisteredTrip.end_km;
+        if (lastRegisteredTrip) {
+          this.maxRegisteredKm = lastRegisteredTrip.end_km;
+          this.defaultStartKm = this.maxRegisteredKm;
+        }
 
         const userId = this.auth.getCurrentUser()?.id;
         const ownTrips = userId
