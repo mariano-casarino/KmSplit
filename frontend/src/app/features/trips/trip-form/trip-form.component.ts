@@ -104,21 +104,20 @@ export class TripFormComponent implements OnInit {
       next: ({ user, vehicle, trips }) => {
         if (user) this.userName.set(user.name);
 
-        const lastRegisteredTrip = trips.reduce<Trip | null>(
-          (latest, t) => (!latest || t.id > latest.id ? t : latest),
-          null,
+        this.maxRegisteredKm = trips.reduce(
+          (maxKm, t) => Math.max(maxKm, t.end_km),
+          vehicle.current_km,
         );
-        this.maxRegisteredKm = lastRegisteredTrip
-          ? lastRegisteredTrip.end_km
-          : vehicle.current_km;
-        this.defaultStartKm =
-          gapStartKm ??
-          this.maxRegisteredKm;
-        this.form.patchValue({ start_km: this.defaultStartKm });
-
+        // Si viene desde "Km sin registrar", es la excepción: hay que rellenar ese hueco
         if (gapStartKm !== null && gapEndKm !== null && gapEndKm > gapStartKm) {
+          this.defaultStartKm = gapStartKm;
+          this.form.patchValue({ start_km: this.defaultStartKm });
           this.useShortcut.set(false);
           this.form.patchValue({ end_km_full: gapEndKm, end_km_shortcut: '' });
+        } else {
+          // Registro normal: SIEMPRE el mayor km final registrado
+          this.defaultStartKm = this.maxRegisteredKm;
+          this.form.patchValue({ start_km: this.defaultStartKm });
         }
 
         const ownTrips = user
@@ -215,14 +214,8 @@ export class TripFormComponent implements OnInit {
   private reloadContext(): void {
     this.tripService.listByVehicle(this.vehicleId).subscribe({
       next: (trips) => {
-        const lastRegisteredTrip = trips.reduce<Trip | null>(
-          (latest, t) => (!latest || t.id > latest.id ? t : latest),
-          null,
-        );
-        if (lastRegisteredTrip) {
-          this.maxRegisteredKm = lastRegisteredTrip.end_km;
-          this.defaultStartKm = this.maxRegisteredKm;
-        }
+        this.maxRegisteredKm = trips.reduce((maxKm, t) => Math.max(maxKm, t.end_km), this.maxRegisteredKm);
+        this.defaultStartKm = this.maxRegisteredKm;
 
         const userId = this.auth.getCurrentUser()?.id;
         const ownTrips = userId
