@@ -12,7 +12,7 @@
   } @else if (settlement()) {
     <div class="settlement-summary">
       <p class="muted">Período</p>
-      <p class="settlement-period">{{ settlement()!.period_start_km | argNumber }} — {{ settlement()!.period_end_km | argNumber }} km</p>
+      <p class="settlement-period">{{ settlement()!.period_start_km | argNumber }} → {{ settlement()!.period_end_km | argNumber }} = {{ periodKm() | argNumber }} km</p>
 
       <div class="summary-grid">
         <div>
@@ -23,6 +23,25 @@
           <p class="muted">Km sin asignar</p>
           <p class="summary-value">{{ settlement()!.unassigned_km | argNumber }} km</p>
         </div>
+      </div>
+
+      <div class="summary-grid">
+        <div>
+          <p class="muted">Litros cargados</p>
+          <p class="summary-value">{{ fuelLoad()?.liters ? (fuelLoad()!.liters | argNumber: 'decimal') : 'x' }} l</p>
+        </div>
+        <div>
+          <p class="muted">Precio combustible</p>
+          <p class="summary-value">{{ pricePerLiter() ? ('$' + (pricePerLiter() | argNumber: 'money') + '/l') : 'x' }}</p>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div>
+          <p class="muted">Rendimiento (km/l)</p>
+          <p class="summary-value">{{ kmPerLiter() ? (kmPerLiter() | argNumber: 'decimal') + ' km/l' : 'x' }}</p>
+        </div>
+        <div></div>
       </div>
 
       <div class="status-row">
