@@ -12,7 +12,10 @@
   } @else {
     @if (kmGaps().length > 0) {
       <div class="gaps-section">
-        <p class="gaps-title"> Km sin registrar </p>
+        <div class="gaps-header">
+          <p class="gaps-title"> Km sin registrar </p>
+          <span class="gaps-indicator" aria-hidden="true"></span>
+        </div>
         <p class="gaps-summary">{{ gapsSummary() }}</p>
         <div class="gaps-list">
           @for (gap of visibleGaps(); track gap.id) {
@@ -59,11 +62,10 @@
           <button
             class="record-row"
             type="button"
-            [class.clickable]="record.clickable"
+            [class.clickable]="record.clickable || gapAfterIds().has(record.id)"
             [class.gap-after]="gapAfterIds().has(record.id)"
             [class.highlighted]="record.id === highlightedKey()"
             [id]="'record-' + record.id"
-            [disabled]="!record.clickable"
             (click)="onRecordClick(record)"
           >
             <span class="record-left">

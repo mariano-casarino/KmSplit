@@ -399,7 +399,12 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   onRecordClick(record: HistoryRecord): void {
-    if (!record.clickable) return;
+    if (!record.clickable) {
+      if (this.gapAfterIds().has(record.id) && this.kmGaps().length > 0) {
+        this.onGapClick(this.kmGaps()[0]);
+      }
+      return;
+    }
 
     const returnTo = this.scope === 'week' ? 'week' : 'full';
 
@@ -407,8 +412,14 @@ export class HistoryComponent implements OnInit, OnDestroy {
       this.router.navigate(['/vehiculo', this.vehicleId, 'viaje'], {
         queryParams: { tripId: record.tripId, returnTo },
       });
+      return;
     } else if (record.type === 'fuel' && record.settlementId) {
       this.router.navigate(['/vehiculo', this.vehicleId, 'liquidacion', record.settlementId]);
+      return;
+    }
+
+    if (this.gapAfterIds().has(record.id) && this.kmGaps().length > 0) {
+      this.onGapClick(this.kmGaps()[0]);
     }
   }
 
