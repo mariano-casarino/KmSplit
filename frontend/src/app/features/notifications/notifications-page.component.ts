@@ -1,6 +1,6 @@
 import { CommonModule, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { Notification } from '../../core/models/notification.model';
 import { NotificationService, PAGE_LIMIT } from '../../core/services/notification.service';
@@ -23,7 +23,10 @@ import { BackButtonComponent } from '../../shared/back-button/back-button.compon
 export class NotificationsPageComponent implements OnInit {
   private service = inject(NotificationService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private location = inject(Location);
+
+  private vehicleId = Number(this.route.snapshot.queryParamMap.get('vehicle')) || null;
 
   items = signal<Notification[]>([]);
   loading = signal(true);
@@ -93,7 +96,7 @@ export class NotificationsPageComponent implements OnInit {
     }
     this.errorMessage.set(null);
 
-    this.service.fetch(PAGE_LIMIT, offset).subscribe({
+    this.service.fetch(PAGE_LIMIT, offset, this.vehicleId).subscribe({
       next: (batch) => {
         this.items.update((list) => (first ? batch : [...list, ...batch]));
         this.hasMore.set(batch.length === PAGE_LIMIT);

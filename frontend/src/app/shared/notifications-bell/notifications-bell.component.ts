@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { Notification } from '../../core/models/notification.model';
@@ -36,6 +36,12 @@ export class NotificationsBellComponent {
 
   private service = inject(NotificationService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  private get vehicleId(): number | null {
+    const id = this.route.snapshot.paramMap.get('id');
+    return id ? Number(id) : null;
+  }
 
   constructor() {
     this.service.unreadCount$.subscribe((count) => this.unreadCount.set(count));
@@ -49,7 +55,7 @@ export class NotificationsBellComponent {
     this.open.update((o) => !o);
     if (this.open()) {
       this.loading.set(true);
-      this.service.load();
+      this.service.load(this.vehicleId);
     }
   }
 
@@ -61,10 +67,11 @@ export class NotificationsBellComponent {
     this.service.markAllRead();
   }
 
-  /** Cierra el panel y lleva a la vista con todas las notificaciones. */
+  /** Cierra el panel y lleva a la vista con todas las notificaciones del vehículo. */
   openAll(): void {
     this.close();
-    this.router.navigate(['/notificaciones']);
+    const vid = this.vehicleId;
+    this.router.navigate(['/notificaciones'], vid ? { queryParams: { vehicle: vid } } : {});
   }
 
   openItem(item: Notification): void {

@@ -388,7 +388,12 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(recipient=self.request.user)
+        qs = Notification.objects.filter(recipient=self.request.user)
+        vehicle_id = self.request.query_params.get("vehicle")
+        if vehicle_id:
+            # Solo las notificaciones del vehículo en el que el usuario está parado
+            qs = qs.filter(vehicle_id=vehicle_id)
+        return qs
 
     def list(self, request, *args, **kwargs):
         # Paginado para que la vista de "ver todas" pueda seguir bajando: la
