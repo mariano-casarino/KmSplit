@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.cache import cache
-from django.db import connection
+from django.db import connection, models
 from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
@@ -393,6 +393,55 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         if vehicle_id:
             # Solo las notificaciones del vehículo en el que el usuario está parado
             qs = qs.filter(vehicle_id=vehicle_id)
+            vehicle = Vehicle.objects.filter(id=vehicle_id).first()
+            if vehicle:
+                last_settlement = (
+                    Settlement.objects.filter(vehicle=vehicle)
+                    .order_by("-period_end_km", "-id")
+                    .first()
+                )
+                if last_settlement:
+                    # Último período cerrado + período actual (sin cerrar)
+                    allowed_ranges = []
+                    # período actual empieza desde donde terminó la última liquidación
+                    allowed_ranges.append((last_settlement.period_end_km, None))
+                    # último período cerrado
+                    allowed_ranges.append(
+                        (last_settlement.period_start_km, last_settlement.period_end_km)
+                    )
+                    # Mantener solo notificaciones relacionadas a viajes/cargas dentro de esos rangos
+                    # Las notificaciones guardan vehicle_id; cruzamos con viajes/cargas
+                    trip_ids_in_range = set(
+                        Trip.objects.filter(vehicle=vehicle)
+                        .filter(
+                            models.Q(end_km__gt=last_settlement.period_end_km)
+                            | models.Q(
+                                start_km__gte=last_settlement.period_start_km,
+                                end_km__lte=last_settlement.period_end_km,
+                            )
+                        )
+                        .values_list("id", flat=True)
+                    )
+                    fuel_ids_in_range = set(
+                        FuelLoad.objects.filter(vehicle=vehicle)
+                        .filter(
+                            models.Q(odometer_km__gte=last_settlement.period_start_km)
+                        )
+                        .filter(
+                            models.Q(odometer_km__lte=last_settlement.period_end_km)
+                            | models.Q(id=last_settlement.fuel_load_id)
+                            | models.Q(odometer_km__gte=last_settlement.period_end_km)
+                        )
+                        .values_list("id", flat=True)
+                    )
+                    # Más simple: incluir todo lo creado después del inicio del último período cerrado
+                    qs = qs.filter(
+                        models.Q(record_id__in=trip_ids_in_range, kind="trip")
+                        | models.Q(record_id__in=fuel_ids_in_range, kind="fuel")
+                        | models.Q(
+                            kind="fuel", record_id=last_settlement.fuel_load_id
+                        )
+                    )
         return qs
 
     def list(self, request, *args, **kwargs):
