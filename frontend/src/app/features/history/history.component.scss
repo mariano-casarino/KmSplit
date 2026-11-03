@@ -209,10 +209,6 @@
   border-left: 4px solid var(--amber);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-
-  &.urgent {
-    border-left-color: var(--red);
-  }
 }
 
 .gap-main {

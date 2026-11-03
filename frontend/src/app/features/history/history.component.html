@@ -16,7 +16,7 @@
         <p class="gaps-summary">{{ gapsSummary() }}</p>
         <div class="gaps-list">
           @for (gap of visibleGaps(); track gap.id) {
-            <div class="gap-item" [class.urgent]="gap.urgent">
+            <div class="gap-item">
               <div class="gap-main">
                 <p class="gap-range">
                   <strong>{{ gap.gapStartKm | argNumber }}</strong> → <strong>{{ gap.gapEndKm | argNumber }}</strong> km
