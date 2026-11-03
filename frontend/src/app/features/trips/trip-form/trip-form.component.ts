@@ -14,16 +14,17 @@ import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 
 /**
- * Generaliza el atajo de "últimos N dígitos" a 1, 2 o 3 dígitos. La cantidad
- * de dígitos que el usuario tipeó define el "módulo" contra el que se
- * resuelve el cruce de decena/centena/millar.
+ * Toma solo los dígitos que cambiaron respecto al km inicial.
+ * Ej: km inicial 123450, se ponen "460" -> 123460
  */
-function calcularKmFinal(kmReferencia: number, digitos: string): number {
-  const cantidadDigitos = digitos.length;
+function calcularKmFinal(kmInicial: number, digitos: string): number {
+  const trimmed = digitos.trim();
+  if (!/^\d+$/.test(trimmed) || trimmed.length === 0) return NaN;
+  const cantidadDigitos = trimmed.length;
   const modulo = Math.pow(10, cantidadDigitos);
-  const base = Math.floor(kmReferencia / modulo) * modulo;
-  let candidato = base + parseInt(digitos, 10);
-  if (candidato <= kmReferencia) {
+  const base = Math.floor(kmInicial / modulo) * modulo;
+  let candidato = base + parseInt(trimmed, 10);
+  if (candidato < kmInicial) {
     candidato += modulo;
   }
   return candidato;
@@ -64,7 +65,6 @@ export class TripFormComponent implements OnInit {
    *  durante 1s y recién ahí volvemos a la pantalla desde la que se editaba. */
   saveSuccess = signal(false);
 
-  useShortcut = signal(true);
   userName = signal('');
   editingTripId = signal<number | null>(null);
   lastOwnTrip = signal<Trip | null>(null);
@@ -72,8 +72,7 @@ export class TripFormComponent implements OnInit {
   form = this.fb.nonNullable.group({
     trip_date: [this.today(), Validators.required],
     start_km: [0, [Validators.required, Validators.min(0)]],
-    end_km_shortcut: ['', [Validators.pattern(/^\d{1,3}$/)]],
-    end_km_full: [null as number | null],
+    end_km: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
   });
 
   editingTripUserName = signal<string | null>(null);
@@ -112,8 +111,12 @@ export class TripFormComponent implements OnInit {
         if (gapStartKm !== null && gapEndKm !== null && gapEndKm > gapStartKm) {
           this.defaultStartKm = gapStartKm;
           this.form.patchValue({ start_km: this.defaultStartKm });
-          this.useShortcut.set(false);
-          this.form.patchValue({ end_km_full: gapEndKm, end_km_shortcut: '' });
+          const diff = gapEndKm - gapStartKm;
+          if (diff > 0 && diff < 1000) {
+            this.form.patchValue({ end_km: String(diff).padStart(3, '0').slice(-3) });
+          } else {
+            this.form.patchValue({ end_km: String(gapEndKm % 1000).padStart(3, '0') });
+          }
         } else {
           // Registro normal: SIEMPRE el mayor km final registrado
           this.defaultStartKm = this.maxRegisteredKm;
@@ -150,13 +153,10 @@ export class TripFormComponent implements OnInit {
 
   get computedEndKm(): number | null {
     const startKm = this.form.controls.start_km.value;
-
-    if (this.useShortcut()) {
-      const raw = this.form.controls.end_km_shortcut.value;
-      if (!raw || !/^\d{1,3}$/.test(raw)) return null;
-      return calcularKmFinal(startKm, raw);
-    }
-    return this.form.controls.end_km_full.value;
+    const raw = this.form.controls.end_km.value;
+    if (!raw || !/^\d+$/.test(raw)) return null;
+    const result = calcularKmFinal(startKm, raw);
+    return Number.isNaN(result) ? null : result;
   }
 
   get kmTraveled(): number | null {
@@ -168,8 +168,7 @@ export class TripFormComponent implements OnInit {
   }
 
   toggleShortcut(): void {
-    this.useShortcut.update((v) => !v);
-    this.form.patchValue({ end_km_shortcut: '', end_km_full: null });
+    // Ya no se usa, mantenido por compatibilidad
   }
 
   goBack(): void {
@@ -197,14 +196,12 @@ export class TripFormComponent implements OnInit {
     this.returnTo = null;
     this.editingTripId.set(null);
     this.editingTripUserName.set(null);
-    this.useShortcut.set(true);
     this.errorMessage.set(null);
     this.saveSuccess.set(false);
     this.form.reset({
       trip_date: this.today(),
       start_km: this.defaultStartKm,
-      end_km_shortcut: '',
-      end_km_full: null,
+      end_km: '',
     });
   }
 
@@ -241,12 +238,11 @@ export class TripFormComponent implements OnInit {
 
   private applyTripToForm(trip: Trip): void {
     this.editingTripId.set(trip.id);
-    this.useShortcut.set(false);
     this.saveSuccess.set(false);
     this.form.patchValue({
       trip_date: trip.trip_date,
       start_km: trip.start_km,
-      end_km_full: trip.end_km,
+      end_km: String(trip.end_km % 1000).padStart(3, '0'),
     });
   }
 

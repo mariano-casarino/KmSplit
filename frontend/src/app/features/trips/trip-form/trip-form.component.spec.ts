@@ -138,8 +138,9 @@ describe('TripFormComponent (confirmación del cambio)', () => {
     vi.useFakeTimers();
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-    // atajo de km: 3 dígitos a partir del km actual
-    vm.form.controls.end_km_shortcut.setValue('100');
+    // km final con solo los dígitos que cambiaron
+    vm.form.controls.start_km.setValue(1000);
+    vm.form.controls.end_km.setValue('100');
 
     vm.submit();
 

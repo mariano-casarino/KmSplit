@@ -38,57 +38,58 @@
 
     @if (lastOwnTrip() && !editingTripId()) {
       <button class="last-trip-card" type="button" (click)="editLastTrip()">
-        <span class="muted">
-          Tu último registro: {{ lastOwnTrip()!.trip_date }} · {{ lastOwnTrip()!.km_traveled | argNumber }} km
+        <span class="last-trip-text">
+          Tu último registro: {{ lastOwnTrip()!.trip_date | date: 'dd/MM/yyyy' }} ·
+          {{ lastOwnTrip()!.start_km % 1000 | number: '3.0-0' }} → {{ lastOwnTrip()!.end_km % 1000 | number: '3.0-0' }} km
         </span>
         <span class="link">✏️ Editar</span>
       </button>
     }
 
     <form (ngSubmit)="submit()" [formGroup]="form" class="trip-form">
-      <div>
-        <input class="field" type="date" formControlName="trip_date" />
+      <div class="trip-field">
+        <label class="trip-label" for="trip_date">Fecha</label>
+        <div class="trip-field-input">
+          <input id="trip_date" class="field" type="date" formControlName="trip_date" />
+        </div>
       </div>
 
       <div>
-        <input class="field" type="number" formControlName="start_km" placeholder="Km inicial" />
+        <div class="trip-field">
+          <label class="trip-label" for="start_km">Km inicial</label>
+          <div class="trip-field-input">
+            <input id="start_km" class="field" type="number" formControlName="start_km" placeholder="Km inicial" />
+          </div>
+        </div>
         <p class="field-hint">
-          Se completa solo con tu último registro, pero podés cambiarlo si
-          estás cargando viajes de otro día.
+          Se autocompleta con tu último registro. Podés cambiarlo si es otro día.
         </p>
         @if (form.controls.start_km.invalid && form.controls.start_km.touched) {
           <p class="field-error">Ingresá el km inicial.</p>
         }
       </div>
 
-      @if (useShortcut()) {
-        <div>
-          <input
-            class="field"
-            type="text"
-            inputmode="numeric"
-            formControlName="end_km_shortcut"
-            placeholder="Últimos dígitos del odómetro"
-            maxlength="3"
-          />
-          <p class="field-hint">
-            Escribí solo los dígitos que cambiaron. Ej: de <strong>…222</strong> a
-            <strong>…230</strong>, escribí <strong>30</strong>; de <strong>…2</strong> a
-            <strong>…9</strong>, escribí <strong>9</strong>.
-          </p>
+      <div>
+        <div class="trip-field">
+          <label class="trip-label" for="end_km">Km final</label>
+          <div class="trip-field-input">
+            <input
+              id="end_km"
+              class="field"
+              type="text"
+              inputmode="numeric"
+              formControlName="end_km"
+              placeholder="Solo lo que cambió"
+            />
+          </div>
         </div>
-        <a class="link" (click)="toggleShortcut()">¿Viaje largo? Ingresá el km completo</a>
-      } @else {
-        <div>
-          <input
-            class="field"
-            type="number"
-            formControlName="end_km_full"
-            placeholder="Km final completo"
-          />
-        </div>
-        <a class="link" (click)="toggleShortcut()">Volver al atajo rápido</a>
-      }
+        <p class="field-hint">
+          Poné solo los dígitos que cambiaron (1, 2 o los que falten). El resto se completa solo.
+        </p>
+        @if (form.controls.end_km.invalid && form.controls.end_km.touched) {
+          <p class="field-error">Ingresá el km final.</p>
+        }
+      </div>
 
       <div class="km-result">
         <p class="muted">Km recorridos</p>
