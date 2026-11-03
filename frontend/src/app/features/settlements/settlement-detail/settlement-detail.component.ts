@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { FuelLoad } from '../../../core/models/fuel-load.model';
 import { Settlement, SettlementStatus } from '../../../core/models/settlement.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { FuelLoadService } from '../../../core/services/fuel-load.service';
@@ -43,12 +44,36 @@ export class SettlementDetailComponent implements OnInit {
   }
 
   settlement = signal<Settlement | null>(null);
+  fuelLoad = signal<FuelLoad | null>(null);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   canManage = signal(false);
   updatingStatus = signal(false);
   deleting = signal(false);
   deleteDialog = signal(false);
+
+  periodKm = computed(() => {
+    const s = this.settlement();
+    if (!s) return 0;
+    return Math.max(0, s.period_end_km - s.period_start_km);
+  });
+
+  pricePerLiter = computed(() => {
+    const s = this.settlement();
+    const f = this.fuelLoad();
+    const liters = Number(f?.liters ?? 0);
+    if (!s || liters <= 0) return null;
+    return s.total_amount / liters;
+  });
+
+  kmPerLiter = computed(() => {
+    const f = this.fuelLoad();
+    const liters = Number(f?.liters ?? 0);
+    if (liters <= 0) return null;
+    const km = this.periodKm();
+    if (km <= 0) return null;
+    return km / liters;
+  });
 
   ngOnInit(): void {
     // dashboard() trae vehicle + group + todos los settlements (con detalles)
@@ -70,6 +95,10 @@ export class SettlementDetailComponent implements OnInit {
         }
 
         this.settlement.set(settlement);
+
+        this.fuelLoadService.get(settlement.fuel_load).pipe(catchError(() => of(null))).subscribe({
+          next: (fl) => this.fuelLoad.set(fl),
+        });
 
         const membership = user
           ? group.members.find((m) => m.user === user.id)
