@@ -56,41 +56,55 @@
     <p class="muted">Cargando...</p>
   } @else {
   <form [formGroup]="form" (ngSubmit)="submit()" class="fuel-form">
-    <div>
-      <input class="field" type="date" formControlName="load_date" />
-      @if (form.controls.load_date.invalid && form.controls.load_date.touched) {
-        <p class="field-error">Elegí la fecha de la carga.</p>
-      }
+    <div class="fuel-field">
+      <label class="fuel-label" for="load_date">Fecha</label>
+      <div class="fuel-field-input">
+        <input id="load_date" class="field" type="date" formControlName="load_date" />
+        @if (form.controls.load_date.invalid && form.controls.load_date.touched) {
+          <p class="field-error">Elegí la fecha de la carga.</p>
+        }
+      </div>
     </div>
 
-    <div>
-      <input class="field" type="number" formControlName="odometer_km" placeholder="Km del odómetro" />
-      @if (form.controls.odometer_km.invalid && form.controls.odometer_km.touched) {
-        <p class="field-error">Ingresá el km del odómetro.</p>
-      }
+    <div class="fuel-field">
+      <label class="fuel-label" for="odometer_km">Km odómetro</label>
+      <div class="fuel-field-input">
+        <input id="odometer_km" class="field" type="number" formControlName="odometer_km" placeholder="Km del odómetro" />
+        @if (form.controls.odometer_km.invalid && form.controls.odometer_km.touched) {
+          <p class="field-error">Ingresá el km del odómetro.</p>
+        }
+      </div>
     </div>
 
-    <div>
-      <input
-        class="field"
-        type="number"
-        formControlName="amount"
-        placeholder="Monto total ($)"
-        step="0.01"
-      />
-      @if (form.controls.amount.invalid && form.controls.amount.touched) {
-        <p class="field-error">Ingresá el monto.</p>
-      }
+    <div class="fuel-field">
+      <label class="fuel-label" for="amount">Monto ($)</label>
+      <div class="fuel-field-input">
+        <input
+          id="amount"
+          class="field"
+          type="number"
+          formControlName="amount"
+          placeholder="Monto total"
+          step="0.01"
+        />
+        @if (form.controls.amount.invalid && form.controls.amount.touched) {
+          <p class="field-error">Ingresá el monto.</p>
+        }
+      </div>
     </div>
 
-    <div>
-      <input
-        class="field"
-        type="number"
-        formControlName="liters"
-        placeholder="Litros cargados (opcional)"
-        step="0.01"
-      />
+    <div class="fuel-field">
+      <label class="fuel-label" for="liters">Litros</label>
+      <div class="fuel-field-input">
+        <input
+          id="liters"
+          class="field"
+          type="number"
+          formControlName="liters"
+          placeholder="Opcional"
+          step="0.01"
+        />
+      </div>
     </div>
 
     <div class="banner-alert banner-info">
