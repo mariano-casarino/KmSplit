@@ -262,23 +262,29 @@ export class HistoryComponent implements OnInit, OnDestroy {
     const trips = this.trips();
     const memberName = (userId: number) => this.memberNames().get(userId) ?? 'Usuario';
 
-    const periods: PeriodDef[] = this.settlements()
+    const sortedSettlements = this.settlements()
       .slice()
-      .sort((a, b) => a.period_start_km - b.period_start_km)
-      .map((s) => ({
+      .sort((a, b) => a.period_start_km - b.period_start_km);
+
+    const periods: PeriodDef[] = [];
+    // Mostrar las últimas 2 liquidaciones cerradas + el período actual sin cerrar
+    const lastTwo = sortedSettlements.slice(-2);
+    for (const s of lastTwo) {
+      periods.push({
         label: `Liquidación del ${formatDate(s.created_at)}`,
         start: s.period_start_km,
         end: s.period_end_km,
         settlementId: s.id,
-        urgent: this.isUrgentPeriod(s.id, lastLoad),
-      }));
+        urgent: false,
+      });
+    }
 
     periods.push({
       label: 'Período actual (todavía sin cerrar)',
       start: vehicle.current_km,
       end: null,
       settlementId: null,
-      urgent: this.isUrgentPeriod(null, lastLoad),
+      urgent: false,
     });
 
     const gaps: KmGap[] = [];
@@ -393,7 +399,12 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   onRecordClick(record: HistoryRecord): void {
-    if (!record.clickable) return;
+    if (!record.clickable) {
+      if (this.gapAfterIds().has(record.id) && this.kmGaps().length > 0) {
+        this.onGapClick(this.kmGaps()[0]);
+      }
+      return;
+    }
 
     const returnTo = this.scope === 'week' ? 'week' : 'full';
 
@@ -401,8 +412,14 @@ export class HistoryComponent implements OnInit, OnDestroy {
       this.router.navigate(['/vehiculo', this.vehicleId, 'viaje'], {
         queryParams: { tripId: record.tripId, returnTo },
       });
+      return;
     } else if (record.type === 'fuel' && record.settlementId) {
       this.router.navigate(['/vehiculo', this.vehicleId, 'liquidacion', record.settlementId]);
+      return;
+    }
+
+    if (this.gapAfterIds().has(record.id) && this.kmGaps().length > 0) {
+      this.onGapClick(this.kmGaps()[0]);
     }
   }
 

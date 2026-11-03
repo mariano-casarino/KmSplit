@@ -60,7 +60,8 @@
   font-family: inherit;
   color: inherit;
   appearance: none;
-  cursor: default;
+  cursor: pointer;
+  pointer-events: auto;
 
   &:last-child {
     border-bottom: none;
@@ -68,10 +69,6 @@
 
   &.clickable {
     cursor: pointer;
-  }
-
-  &:disabled {
-    opacity: 1;
   }
 
   /* La línea que divide dos registros y tiene km sin registrar en el medio se
@@ -88,6 +85,7 @@
       bottom: 0;
       height: 1px;
       background: var(--amber);
+      pointer-events: none;
     }
   }
 
@@ -180,11 +178,25 @@
   margin-bottom: 18px;
 }
 
+.gaps-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 2px;
+}
+
 .gaps-title {
   font-size: 12.5px;
   font-weight: 800;
   color: var(--gray-700);
-  margin: 0 0 2px;
+  margin: 0;
+}
+
+.gaps-indicator {
+  width: 26px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--amber);
 }
 
 .gaps-summary {
@@ -209,10 +221,6 @@
   border-left: 4px solid var(--amber);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-
-  &.urgent {
-    border-left-color: var(--red);
-  }
 }
 
 .gap-main {

@@ -17,10 +17,6 @@
     padding: 10px 12px;
     margin-bottom: 4px;
 
-    &.urgent {
-      border-left-color: var(--red);
-    }
-
     &:hover {
       background: var(--gray-100);
     }

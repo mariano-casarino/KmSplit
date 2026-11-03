@@ -77,15 +77,17 @@ export class NotificationService implements OnDestroy {
   /** Trae una porción de la lista (la más reciente primero). Se usa tanto
    *  para el panel de la campana como para la vista de "ver todas", que la
    *  va paginando con `offset`. */
-  fetch(limit: number, offset = 0): Observable<Notification[]> {
-    return this.http.get<Notification[]>(`${this.baseUrl}`, {
-      params: { limit: String(limit), offset: String(offset) },
-    });
+  fetch(limit: number, offset = 0, vehicleId?: number | null): Observable<Notification[]> {
+    const params: Record<string, string> = { limit: String(limit), offset: String(offset) };
+    if (vehicleId) {
+      params['vehicle'] = String(vehicleId);
+    }
+    return this.http.get<Notification[]>(`${this.baseUrl}`, { params });
   }
 
   /** Trae la lista para el panel de la campana. */
-  load(): void {
-    this.fetch(PANEL_LIMIT).subscribe({
+  load(vehicleId?: number | null): void {
+    this.fetch(PANEL_LIMIT, 0, vehicleId).subscribe({
       next: (items) => this.itemsSubject.next(items),
       error: () => this.itemsSubject.next([]),
     });
