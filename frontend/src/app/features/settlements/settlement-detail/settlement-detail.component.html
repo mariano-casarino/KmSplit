@@ -64,7 +64,9 @@
       @for (detail of settlement()!.details; track detail.id) {
         <div class="detail-row">
           <div class="detail-header">
-            <div class="detail-name-row">
+            <span class="detail-name">{{ detail.user_name }}</span>
+            <div class="detail-amount-row">
+              <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
               @if (canMarkPaid()) {
                 <button
                   class="paid-checkbox"
@@ -77,9 +79,7 @@
                   @if (detail.paid) { ✓ }
                 </button>
               }
-              <span class="detail-name">{{ detail.user_name }}</span>
             </div>
-            <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
           </div>
           <p class="muted detail-breakdown">
             {{ detail.registered_km | argNumber }} km propios
