@@ -67,7 +67,7 @@
             <span class="detail-name">{{ detail.user_name }}</span>
             <div class="detail-amount-row">
               <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
-              @if (canMarkPaid() && detail.amount_owed > 0) {
+              @if (canMarkPaid() && (detail.amount_owed > 0 || detail.unassigned_km_share > 0)) {
                 <button
                   class="paid-checkbox"
                   type="button"
@@ -78,7 +78,7 @@
                 >
                   @if (detail.paid) { ✓ }
                 </button>
-              } @else if (detail.amount_owed <= 0) {
+              } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
                 <span class="paid-checkbox checked" aria-hidden="true">✓</span>
               }
             </div>
