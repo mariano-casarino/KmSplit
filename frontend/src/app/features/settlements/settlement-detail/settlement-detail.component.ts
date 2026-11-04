@@ -80,7 +80,9 @@ export class SettlementDetailComponent implements OnInit {
   unpaidNames = computed(() => {
     const s = this.settlement();
     if (!s) return [];
-    return s.details.filter((d) => !d.paid).map((d) => d.user_name);
+    return s.details
+      .filter((d) => Number(d.amount_owed) > 0 && !d.paid)
+      .map((d) => d.user_name);
   });
 
   ngOnInit(): void {
@@ -157,6 +159,8 @@ export class SettlementDetailComponent implements OnInit {
   markDetailPaid(detailId: number, paid: boolean): void {
     const current = this.settlement();
     if (!current || !this.canMarkPaid()) return;
+    const detail = current.details.find((d) => d.id === detailId);
+    if (detail && Number(detail.amount_owed) <= 0) return;
     this.markingPaidId.set(detailId);
     this.settlementService.markDetailPaid(current.id, detailId, paid).subscribe({
       next: (updated) => {
