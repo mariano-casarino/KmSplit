@@ -169,12 +169,14 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class SettlementDetailSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.name", read_only=True)
+    paid_by_name = serializers.CharField(source="paid_by.name", read_only=True)
 
     class Meta:
         model = SettlementDetail
         fields = [
             "id", "user", "user_name", "registered_km",
             "unassigned_km_share", "km_driven", "percentage", "amount_owed",
+            "paid", "paid_at", "paid_by", "paid_by_name",
         ]
 
 

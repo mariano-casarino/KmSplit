@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { FuelLoad } from '../../../core/models/fuel-load.model';
-import { Settlement, SettlementStatus } from '../../../core/models/settlement.model';
+import { Settlement } from '../../../core/models/settlement.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { FuelLoadService } from '../../../core/services/fuel-load.service';
 import { SettlementService } from '../../../core/services/settlement.service';
@@ -48,9 +48,11 @@ export class SettlementDetailComponent implements OnInit {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   canManage = signal(false);
-  updatingStatus = signal(false);
+  canMarkPaid = signal(false);
+  currentUserId = signal<number | null>(null);
   deleting = signal(false);
   deleteDialog = signal(false);
+  markingPaidId = signal<number | null>(null);
 
   periodKm = computed(() => {
     const s = this.settlement();
@@ -75,6 +77,21 @@ export class SettlementDetailComponent implements OnInit {
     return km / liters;
   });
 
+  sortedDetails = computed(() => {
+    const s = this.settlement();
+    if (!s) return [];
+    return [...s.details].sort((a, b) => Number(b.amount_owed) - Number(a.amount_owed));
+  });
+
+  unpaidNames = computed(() => {
+    const s = this.settlement();
+    if (!s) return [];
+    return [...s.details]
+      .filter((d) => Number(d.amount_owed) > 0 && !d.paid)
+      .sort((a, b) => Number(b.amount_owed) - Number(a.amount_owed))
+      .map((d) => d.user_name);
+  });
+
   ngOnInit(): void {
     // dashboard() trae vehicle + group + todos los settlements (con detalles)
     // en 1 sola request; extraemos el que corresponde a esta URL. fetchMe es
@@ -95,9 +112,15 @@ export class SettlementDetailComponent implements OnInit {
         }
 
         this.settlement.set(settlement);
+        if (user) this.currentUserId.set(user.id);
 
         this.fuelLoadService.get(settlement.fuel_load).pipe(catchError(() => of(null))).subscribe({
-          next: (fl) => this.fuelLoad.set(fl),
+          next: (fl) => {
+            this.fuelLoad.set(fl);
+            if (fl && user && fl.loaded_by === user.id) {
+              this.canMarkPaid.set(true);
+            }
+          },
         });
 
         const membership = user
@@ -110,6 +133,23 @@ export class SettlementDetailComponent implements OnInit {
           (membership?.role === 'owner' || membership?.role === 'admin') &&
             isLastSettlement,
         );
+        if (!user) {
+          this.loading.set(false);
+          return;
+        }
+        if (!this.fuelLoad() && settlement.fuel_load) {
+          this.fuelLoadService.get(settlement.fuel_load).pipe(catchError(() => of(null))).subscribe({
+            next: (fl) => {
+              this.fuelLoad.set(fl);
+              if (fl && fl.loaded_by === user.id) {
+                this.canMarkPaid.set(true);
+              }
+              this.loading.set(false);
+            },
+            error: () => this.loading.set(false),
+          });
+          return;
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -120,22 +160,24 @@ export class SettlementDetailComponent implements OnInit {
   }
 
   toggleStatus(): void {
+    // Ya no se usa desde la UI
+  }
+
+  markDetailPaid(detailId: number, paid: boolean): void {
     const current = this.settlement();
-    if (!current) return;
-
-    const newStatus: SettlementStatus = current.status === 'pendiente' ? 'pagado' : 'pendiente';
-    this.updatingStatus.set(true);
-
-    this.settlementService.markStatus(current.id, newStatus).subscribe({
+    if (!current || !this.canMarkPaid()) return;
+    const detail = current.details.find((d) => d.id === detailId);
+    if (detail && Number(detail.amount_owed) <= 0) return;
+    this.markingPaidId.set(detailId);
+    this.settlementService.markDetailPaid(current.id, detailId, paid).subscribe({
       next: (updated) => {
         this.settlement.set(updated);
-        this.updatingStatus.set(false);
-        // el estado sale en el dashboard cacheado (resumen/liquidaciones)
+        this.markingPaidId.set(null);
         this.vehicleService.invalidate(this.vehicleId);
       },
       error: () => {
-        this.updatingStatus.set(false);
-        this.errorMessage.set('No pudimos actualizar el estado.');
+        this.markingPaidId.set(null);
+        this.errorMessage.set('No pudimos marcar el pago.');
       },
     });
   }

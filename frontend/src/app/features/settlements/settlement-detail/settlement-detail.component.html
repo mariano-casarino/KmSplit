@@ -52,25 +52,36 @@
           </div>
         }
         <div class="status-line">
-          <span class="status-badge" [class.paid]="settlement()!.status === 'pagado'">
-            {{ settlement()!.status === 'pagado' ? '✅ Pagado' : '⏳ Pendiente' }}
+          <span class="status-badge" [class.paid]="unpaidNames().length === 0">
+            {{ unpaidNames().length === 0 ? '✅ Pagado' : '⏳ Pendiente' }}{{ unpaidNames().length > 0 ? ' (' + unpaidNames().join(', ') + ')' : '' }}
           </span>
-          @if (canManage()) {
-            <button class="link" type="button" (click)="toggleStatus()" [disabled]="updatingStatus()">
-              Marcar como {{ settlement()!.status === 'pendiente' ? 'pagado' : 'pendiente' }}
-            </button>
-          }
         </div>
       </div>
     </div>
 
     <div class="section-title">Desglose por integrante</div>
     <div class="details-list">
-      @for (detail of settlement()!.details; track detail.id) {
+      @for (detail of sortedDetails(); track detail.id) {
         <div class="detail-row">
           <div class="detail-header">
             <span class="detail-name">{{ detail.user_name }}</span>
-            <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
+            <div class="detail-amount-row">
+              <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
+              @if (canMarkPaid() && (detail.amount_owed > 0 || detail.unassigned_km_share > 0)) {
+                <button
+                  class="paid-checkbox"
+                  type="button"
+                  [class.checked]="detail.paid"
+                  [disabled]="markingPaidId() === detail.id"
+                  (click)="markDetailPaid(detail.id, !detail.paid)"
+                  [attr.aria-label]="detail.paid ? 'Marcar como no pagado' : 'Marcar como pagado'"
+                >
+                  @if (detail.paid) { ✓ }
+                </button>
+              } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
+                <span class="paid-checkbox checked" aria-hidden="true">✓</span>
+              }
+            </div>
           </div>
           <p class="muted detail-breakdown">
             {{ detail.registered_km | argNumber }} km propios

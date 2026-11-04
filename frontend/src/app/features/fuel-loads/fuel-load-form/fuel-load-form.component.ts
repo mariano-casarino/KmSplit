@@ -150,6 +150,11 @@ export class FuelLoadFormComponent {
     this.settlementsVisible.update((v) => v + this.settlementPageSize);
   }
 
+  isSettlementPaid(s: Settlement): boolean {
+    if (!s.details || s.details.length === 0) return s.status === 'pagado';
+    return s.details.every((d: any) => Number(d.amount_owed) <= 0 || !!d.paid);
+  }
+
   settlementLabel(s: Settlement): string {
     const date = s.load_date ? this.formatDate(s.load_date) : '';
     const who = s.loaded_by_name ?? '';

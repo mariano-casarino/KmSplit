@@ -227,6 +227,15 @@ class SettlementDetail(models.Model):
     )
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     amount_owed = models.DecimalField(max_digits=12, decimal_places=2)
+    paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    paid_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
 
     def __str__(self):
         return f"{self.user} debe ${self.amount_owed} en {self.settlement}"

@@ -362,7 +362,6 @@ class SettlementViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["patch"])
     def mark_status(self, request, pk=None):
-        """PATCH /api/settlements/{id}/mark_status/  body: {"status": "pagado"}"""
         settlement = self.get_object()
         membership = get_membership(request.user, settlement.vehicle.group)
         if membership is None or membership.role not in ("owner", "admin"):
@@ -376,6 +375,31 @@ class SettlementViewSet(viewsets.ReadOnlyModelViewSet):
         settlement.status = new_status
         settlement.status_updated_by = request.user
         settlement.save()
+        services.invalidate_vehicle_dashboard(settlement.vehicle_id)
+        return Response(SettlementSerializer(settlement).data)
+
+    @action(detail=True, methods=["patch"], url_path="details/(?P<detail_id>[^/.]+)/mark_paid")
+    def mark_detail_paid(self, request, pk=None, detail_id=None):
+        settlement = self.get_object()
+        # Solo quien registró la carga puede marcar quién pagó
+        if settlement.fuel_load.loaded_by_id != request.user.id:
+            return Response(
+                {"detail": "Solo quien registró la carga puede marcar los pagos"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        detail = settlement.details.filter(id=detail_id).first()
+        if not detail:
+            return Response({"detail": "Detalle no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        paid = bool(request.data.get("paid", True))
+        detail.paid = paid
+        if paid:
+            from django.utils import timezone
+            detail.paid_at = timezone.now()
+            detail.paid_by = request.user
+        else:
+            detail.paid_at = None
+            detail.paid_by = None
+        detail.save()
         services.invalidate_vehicle_dashboard(settlement.vehicle_id)
         return Response(SettlementSerializer(settlement).data)
 
