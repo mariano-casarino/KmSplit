@@ -157,7 +157,7 @@
               type="button"
               (click)="goToSettlement(settlement.id)"
             >
-              <span class="settlement-status">{{ settlement.status === 'pagado' ? '✅' : '⏳' }}</span>
+              <span class="settlement-status">{{ isSettlementPaid(settlement) ? '✅' : '⏳' }}</span>
               <span class="settlement-label">{{ settlementLabel(settlement) }}</span>
               <span class="edit-hint">👁️</span>
             </button>
