@@ -381,10 +381,10 @@ class SettlementViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["patch"], url_path="details/(?P<detail_id>[^/.]+)/mark_paid")
     def mark_detail_paid(self, request, pk=None, detail_id=None):
         settlement = self.get_object()
-        membership = get_membership(request.user, settlement.vehicle.group)
-        if membership is None or membership.role not in ("owner", "admin"):
+        # Solo quien registró la carga puede marcar quién pagó
+        if settlement.fuel_load.loaded_by_id != request.user.id:
             return Response(
-                {"detail": "Solo el owner o admin puede marcar pagos"},
+                {"detail": "Solo quien registró la carga puede marcar los pagos"},
                 status=status.HTTP_403_FORBIDDEN,
             )
         detail = settlement.details.filter(id=detail_id).first()

@@ -52,14 +52,9 @@
           </div>
         }
         <div class="status-line">
-          <span class="status-badge" [class.paid]="settlement()!.status === 'pagado'">
-            {{ settlement()!.status === 'pagado' ? '✅ Pagado' : '⏳ Pendiente' }}
+          <span class="status-badge" [class.paid]="unpaidNames().length === 0">
+            {{ unpaidNames().length === 0 ? '✅ Pagado' : '⏳ Pendiente' }}{{ unpaidNames().length > 0 ? ' (' + unpaidNames().join(', ') + ')' : '' }}
           </span>
-          @if (canManage()) {
-            <button class="link" type="button" (click)="toggleStatus()" [disabled]="updatingStatus()">
-              Marcar como {{ settlement()!.status === 'pendiente' ? 'pagado' : 'pendiente' }}
-            </button>
-          }
         </div>
       </div>
     </div>
@@ -69,7 +64,21 @@
       @for (detail of settlement()!.details; track detail.id) {
         <div class="detail-row">
           <div class="detail-header">
-            <span class="detail-name">{{ detail.user_name }}</span>
+            <div class="detail-name-row">
+              @if (canMarkPaid()) {
+                <button
+                  class="paid-checkbox"
+                  type="button"
+                  [class.checked]="detail.paid"
+                  [disabled]="markingPaidId() === detail.id"
+                  (click)="markDetailPaid(detail.id, !detail.paid)"
+                  [attr.aria-label]="detail.paid ? 'Marcar como no pagado' : 'Marcar como pagado'"
+                >
+                  @if (detail.paid) { ✓ }
+                </button>
+              }
+              <span class="detail-name">{{ detail.user_name }}</span>
+            </div>
             <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
           </div>
           <p class="muted detail-breakdown">
