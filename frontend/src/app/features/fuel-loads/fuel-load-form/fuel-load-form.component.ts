@@ -152,7 +152,7 @@ export class FuelLoadFormComponent {
 
   isSettlementPaid(s: Settlement): boolean {
     if (!s.details || s.details.length === 0) return s.status === 'pagado';
-    return s.details.every((d) => Number(d.amount_owed) <= 0 || d.paid);
+    return s.details.every((d) => Number(d.amount_owed) <= 0 || !!d.paid);
   }
 
   settlementLabel(s: Settlement): string {
