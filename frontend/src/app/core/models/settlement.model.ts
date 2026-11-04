@@ -9,6 +9,10 @@ export interface SettlementDetail {
   km_driven: number;
   percentage: number;
   amount_owed: number;
+  paid?: boolean;
+  paid_at?: string | null;
+  paid_by?: number | null;
+  paid_by_name?: string | null;
 }
 
 export interface Settlement {

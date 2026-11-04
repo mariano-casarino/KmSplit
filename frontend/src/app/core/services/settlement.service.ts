@@ -21,4 +21,8 @@ export class SettlementService {
   markStatus(id: number, status: SettlementStatus): Observable<Settlement> {
     return this.http.patch<Settlement>(`${this.baseUrl}/${id}/mark_status/`, { status });
   }
+
+  markDetailPaid(settlementId: number, detailId: number, paid: boolean): Observable<Settlement> {
+    return this.http.patch<Settlement>(`${this.baseUrl}/${settlementId}/details/${detailId}/mark_paid/`, { paid });
+  }
 }
