@@ -61,7 +61,7 @@
 
     <div class="section-title">Desglose por integrante</div>
     <div class="details-list">
-      @for (detail of settlement()!.details; track detail.id) {
+      @for (detail of sortedDetails(); track detail.id) {
         <div class="detail-row">
           <div class="detail-header">
             <span class="detail-name">{{ detail.user_name }}</span>

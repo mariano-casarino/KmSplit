@@ -77,11 +77,18 @@ export class SettlementDetailComponent implements OnInit {
     return km / liters;
   });
 
+  sortedDetails = computed(() => {
+    const s = this.settlement();
+    if (!s) return [];
+    return [...s.details].sort((a, b) => Number(b.amount_owed) - Number(a.amount_owed));
+  });
+
   unpaidNames = computed(() => {
     const s = this.settlement();
     if (!s) return [];
-    return s.details
+    return [...s.details]
       .filter((d) => Number(d.amount_owed) > 0 && !d.paid)
+      .sort((a, b) => Number(b.amount_owed) - Number(a.amount_owed))
       .map((d) => d.user_name);
   });
 
