@@ -43,9 +43,17 @@ export class PagosComponent implements OnInit {
   private auth = inject(AuthService);
 
   vehicleId = Number(this.route.snapshot.paramMap.get('id'));
-  profileBack = `/vehiculo/${this.vehicleId}/resumen/pagos`;
+  /** Desde dónde se abrió Pagos: 'inicio' o 'resumen' (default). */
+  from = this.route.snapshot.queryParamMap.get('from') ?? 'resumen';
+  profileBack = `/vehiculo/${this.vehicleId}/resumen/pagos${this.from === 'inicio' ? '?from=inicio' : '?from=resumen'}`;
 
   loading = signal(true);
+
+  /** Ruta de "volver" según el origen de la visita. */
+  backRoute(): (string | number)[] {
+    if (this.from === 'inicio') return ['/vehiculo', this.vehicleId];
+    return ['/vehiculo', this.vehicleId, 'resumen'];
+  }
   errorMessage = signal<string | null>(null);
   settlements = signal<Settlement[]>([]);
   fuelLoadsById = signal<Map<number, FuelLoad>>(new Map());
