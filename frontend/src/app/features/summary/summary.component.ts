@@ -199,7 +199,7 @@ export class SummaryComponent implements OnInit, OnDestroy {
       type: 'trip' as const,
       userName: memberName(t.user),
       userId: t.user,
-      label: `${formatKm(t.start_km)} → ${formatKm(t.end_km)} km / ${formatKm(t.km_traveled)} km`,
+      label: `${formatKm(t.km_traveled)} km / ${formatKm(t.start_km)} → ${formatKm(t.end_km)} km `,
       tripId: t.id,
       // un miembro puede editar sus propios viajes (igual que en el historial),
       // aunque no pueda tocar los de los demás

@@ -122,6 +122,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'vehiculo/:id/resumen/pagos',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/summary/pagos/pagos.component').then((m) => m.PagosComponent),
+  },
+  {
     path: 'vehiculo/:id/resumen',
     canActivate: [authGuard],
     loadComponent: () =>

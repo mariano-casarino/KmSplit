@@ -158,7 +158,7 @@ export class FuelLoadFormComponent {
   settlementLabel(s: Settlement): string {
     const date = s.load_date ? this.formatDate(s.load_date) : '';
     const who = s.loaded_by_name ?? '';
-    return `${formatKm(s.period_start_km)} → ${formatKm(s.period_end_km)} km · ${who} · ${date} · $${s.total_amount}`;
+    return `${date} · ${who} · $${s.total_amount} · ${formatKm(s.period_end_km)} km`;
   }
 
   private formatDate(iso: string): string {

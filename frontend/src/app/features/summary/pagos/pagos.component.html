@@ -1,0 +1,153 @@
+<div class="screen">
+  <div class="screen-header">
+    <app-back-button [link]="['/vehiculo', vehicleId, 'resumen']" />
+    <h1>Cargas</h1>
+    <span class="header-actions">
+      <app-notifications-bell />
+      <a class="icon-btn" routerLink="/perfil" [queryParams]="{ back: profileBack }" aria-label="Ver mi perfil">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </a>
+    </span>
+  </div>
+
+  <p class="page-desc">
+    En esta parte vas a poder encontrar todas las liquidaciones, que son lo que se genera luego de registrar una carga de combustible. Ahí vas a encontrar el detalle de lo que debe pagar cada integrante, kilómetros recorridos en ese período, km repartidos y mucha más información.
+  </p>
+
+  @if (loading()) {
+    <p class="muted">Cargando...</p>
+  } @else if (errorMessage()) {
+    <p class="field-error">{{ errorMessage() }}</p>
+  } @else {
+    <div class="section-title">Liquidaciones</div>
+
+    <div class="saldo-box">
+      <span class="saldo-label">Saldo a pagar:</span>
+      <span class="saldo-value">${{ saldoAPagar() | argNumber: 'money' }}</span>
+    </div>
+
+    @if (settlements().length === 0) {
+      <p class="muted">Todavía no hay liquidaciones para este vehículo.</p>
+    } @else {
+      <div class="cards">
+        @for (s of settlements(); track s.id; let i = $index) {
+          <div class="settlement-card" [class.expanded]="isExpanded(s.id)">
+            <button class="card-header" type="button" (click)="toggle(s.id)">
+              <span class="card-header-left">
+                @if (i === 0) {
+                  <span class="card-kicker">Última liquidación</span>
+                }
+                <span class="card-basic">
+                  <span class="settlement-status">{{ isSettlementPaid(s) ? '✅' : '⏳' }}</span>
+                  <span class="settlement-label">{{ settlementLabel(s) }}</span>
+                </span>
+              </span>
+              <span class="card-chevron" aria-hidden="true">{{ isExpanded(s.id) ? '▾' : '▸' }}</span>
+            </button>
+
+            @if (isExpanded(s.id)) {
+              <div class="card-body">
+                <div class="settlement-summary">
+                  <p class="muted">Período</p>
+                  <p class="settlement-period">{{ s.period_start_km | argNumber }} → {{ s.period_end_km | argNumber }} = <strong> {{ periodKm(s) | argNumber }} km</strong></p>
+
+                  <div class="summary-grid">
+                    <div>
+                      <p class="muted">Monto total</p>
+                      <p class="summary-value">${{ s.total_amount | argNumber: 'money' }}</p>
+                    </div>
+                    <div>
+                      <p class="muted">Km sin asignar</p>
+                      <p class="summary-value">{{ s.unassigned_km | argNumber }} km</p>
+                    </div>
+                  </div>
+
+                  <div class="summary-grid">
+                    <div>
+                      <p class="muted">Litros cargados</p>
+                      <p class="summary-value">{{ fuelLoadFor(s)?.liters ? (fuelLoadFor(s)!.liters | argNumber: 'decimal') : 'x' }} l</p>
+                    </div>
+                    <div>
+                      <p class="muted">Precio combustible</p>
+                      <p class="summary-value">{{ pricePerLiter(s) ? ('$' + (pricePerLiter(s) | argNumber: 'money') + '/l') : 'x' }}</p>
+                    </div>
+                  </div>
+
+                  <div class="summary-grid">
+                    <div>
+                      <p class="muted">Rendimiento (km/l)</p>
+                      <p class="summary-value">{{ kmPerLiter(s) ? (kmPerLiter(s) | argNumber: 'decimal') + ' km/l' : 'x' }}</p>
+                    </div>
+                
+                  </div>
+
+                  <div class="status-row">
+                    <div class="status-line">
+                      <span class="status-badge" [class.paid]="unpaidNames(s).length === 0">
+                        {{ unpaidNames(s).length === 0 ? '✅ Pagado' : '⏳ Pendiente' }}{{ unpaidNames(s).length > 0 ? ' (' + unpaidNames(s).join(', ') + ')' : '' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="section-title inner">Desglose por integrante</div>
+                <div class="details-list">
+                  @for (detail of sortedDetails(s); track detail.id) {
+                    <div class="detail-row">
+                      <div class="detail-header">
+                        <span class="detail-name">{{ detail.user_name }}</span>
+                        <div class="detail-amount-row">
+                          <span class="detail-amount">${{ detail.amount_owed | argNumber: 'money' }}</span>
+                          @if (canMarkPaid(s) && (detail.amount_owed > 0 || detail.unassigned_km_share > 0)) {
+                            <button
+                              class="paid-checkbox"
+                              type="button"
+                              [class.checked]="detail.paid"
+                              [disabled]="markingPaidId() === detail.id"
+                              (click)="markDetailPaid(s, detail.id, !detail.paid); $event.stopPropagation()"
+                              [attr.aria-label]="detail.paid ? 'Marcar como no pagado' : 'Marcar como pagado'"
+                            >
+                              @if (detail.paid) { ✓ }
+                            </button>
+                          } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
+                            <span class="paid-checkbox checked" aria-hidden="true">✓</span>
+                          }
+                        </div>
+                      </div>
+                      <p class="muted detail-breakdown">
+                        {{ detail.registered_km | argNumber }} km propios
+                        @if (detail.unassigned_km_share > 0) {
+                          + {{ detail.unassigned_km_share | argNumber: 'decimal' }} km del reparto equitativo
+                        }
+                        = {{ detail.km_driven | argNumber: 'decimal' }} km ({{ detail.percentage | argNumber: 'decimal' }}%)
+                      </p>
+                    </div>
+                  }
+                </div>
+
+                <div class="card-actions">
+                  <button class="btn btn-secondary ver-menos" type="button" (click)="collapse(s.id)">Ver menos</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <app-bottom-nav [vehicleId]="vehicleId" />
+</div>

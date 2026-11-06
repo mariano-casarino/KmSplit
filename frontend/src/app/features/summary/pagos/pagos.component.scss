@@ -1,0 +1,258 @@
+.page-desc {
+  font-size: 13px;
+  color: var(--gray-700);
+  line-height: 1.45;
+  margin: 0 0 14px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 10px;
+
+  &.inner {
+    margin: 0 0 10px;
+  }
+}
+
+.saldo-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-left: 4px solid var(--blue-500);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.saldo-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.saldo-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.settlement-card {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  &.expanded {
+    border-color: var(--blue-200, #bfdbfe);
+  }
+}
+
+.card-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+
+  &:hover {
+    background: var(--gray-100);
+  }
+}
+
+.card-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.card-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--blue-600, var(--blue-500));
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.card-basic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.settlement-status {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.settlement-label {
+  font-size: 13px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.card-chevron {
+  font-size: 14px;
+  color: var(--gray-500);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.card-body {
+  border-top: 1px solid var(--gray-200, var(--gray-100));
+  padding: 12px;
+  background: var(--white);
+}
+
+/* Estilos iguales a settlement-detail (vista de liquidación) */
+.settlement-summary {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.settlement-period {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 2px 0 14px;
+}
+
+.summary-grid {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 2px 0 0;
+}
+
+.status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.status-badge {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--amber);
+
+  &.paid {
+    color: var(--green);
+  }
+}
+
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-row {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.detail-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.paid-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--gray-300);
+  border-radius: 4px;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--white);
+  padding: 0;
+  cursor: pointer;
+
+  &.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.detail-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.detail-amount {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--blue-500);
+}
+
+.detail-breakdown {
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.card-actions {
+  margin-top: 12px;
+}
+
+.ver-menos {
+  width: 100%;
+}
