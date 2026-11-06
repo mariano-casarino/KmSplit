@@ -41,13 +41,16 @@ export class NotificationService implements OnDestroy {
     this.stopPolling();
   }
 
+  private currentVehicleId: number | null = null;
+
   /** Arranca el refresco periódico + el refresco al volver a la pestaña. */
-  startPolling(): void {
+  startPolling(vehicleId?: number | null): void {
+    this.currentVehicleId = vehicleId ?? null;
     if (this.pollTimer) return;
-    this.refreshUnread();
-    this.pollTimer = setInterval(() => this.refreshUnread(), POLL_INTERVAL_MS);
+    this.refreshUnread(this.currentVehicleId);
+    this.pollTimer = setInterval(() => this.refreshUnread(this.currentVehicleId), POLL_INTERVAL_MS);
     this.visibilityHandler = () => {
-      if (!document.hidden) this.refreshUnread();
+      if (!document.hidden) this.refreshUnread(this.currentVehicleId);
     };
     document.addEventListener('visibilitychange', this.visibilityHandler);
   }
@@ -68,10 +71,12 @@ export class NotificationService implements OnDestroy {
 
   /** Refresca el contador de no leídas (lightweight). Errores en silencio:
    *  el próximo tick lo reintenta. */
-  refreshUnread(): void {
+  refreshUnread(vehicleId?: number | null): void {
+    const params: Record<string, string> = {};
+    if (vehicleId) params['vehicle'] = String(vehicleId);
     this.http
-      .get<UnreadCount>(`${this.baseUrl}unread_count/`)
-      .subscribe({ next: ({ count }) => this.unreadCountSubject.next(count) });
+      .get<any>(`${this.baseUrl}unread_count/`, { params })
+      .subscribe({ next: (res) => this.unreadCountSubject.next(Number(res?.count ?? 0)) });
   }
 
   /** Trae una porción de la lista (la más reciente primero). Se usa tanto
@@ -117,9 +122,12 @@ export class NotificationService implements OnDestroy {
   /** Marca todas como leídas. Siempre pega el endpoint: la lista de la vista
    *  "ver todas" no vive en el subject del panel, así que no se puede decidir
    *  con la lista local si hay algo sin leer. */
-  markAllRead(): void {
+  markAllRead(vehicleId?: number | null): void {
+    const vid = vehicleId ?? this.currentVehicleId;
     this.unreadCountSubject.next(0);
     this.itemsSubject.next(this.itemsSubject.getValue().map((n) => ({ ...n, is_read: true })));
-    this.http.post(`${this.baseUrl}read_all/`, {}).subscribe();
+    const params: Record<string, string> = {};
+    if (vid) params['vehicle'] = String(vid);
+    this.http.post(`${this.baseUrl}read_all/`, {}, { params }).subscribe();
   }
 }

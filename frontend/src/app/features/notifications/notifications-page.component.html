@@ -14,7 +14,7 @@
   } @else {
     @if (unreadCount() > 0) {
       <div class="page-actions">
-        <span class="muted">{{ unreadCount() }} sin leer</span>
+        <span class="muted">{{ displayCount() }} sin leer</span>
         <button class="link" type="button" (click)="markAllRead()">Marcar todas</button>
       </div>
     }

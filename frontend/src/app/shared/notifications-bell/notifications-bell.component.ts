@@ -49,6 +49,9 @@ export class NotificationsBellComponent {
       this.items.set(items);
       this.loading.set(false);
     });
+    this.service.startPolling(this.vehicleId);
+    // Refrescar con el contexto del vehículo actual
+    this.service.refreshUnread(this.vehicleId);
   }
 
   toggle(): void {
@@ -56,6 +59,7 @@ export class NotificationsBellComponent {
     if (this.open()) {
       this.loading.set(true);
       this.service.load(this.vehicleId);
+      this.service.refreshUnread(this.vehicleId);
     }
   }
 
@@ -64,7 +68,7 @@ export class NotificationsBellComponent {
   }
 
   markAllRead(): void {
-    this.service.markAllRead();
+    this.service.markAllRead(this.vehicleId);
   }
 
   /** Cierra el panel y lleva a la vista con todas las notificaciones del vehículo. */
