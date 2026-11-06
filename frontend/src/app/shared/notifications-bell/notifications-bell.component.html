@@ -79,7 +79,7 @@
         <button class="panel-seeall" type="button" (click)="openAll()">
           Ver todas
           @if (unreadCount() > 0) {
-            <span class="panel-seeall-count">{{ unreadCount() }}</span>
+            <span class="panel-seeall-count">{{ displayCount() }}</span>
           }
         </button>
       }

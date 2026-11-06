@@ -1,5 +1,5 @@
 import { CommonModule, Location } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Notification } from '../../core/models/notification.model';
@@ -35,11 +35,12 @@ export class NotificationsPageComponent implements OnInit {
   hasMore = signal(false);
   errorMessage = signal<string | null>(null);
   unreadCount = signal(0);
+  displayCount = computed(() => (this.unreadCount() > 99 ? '+99' : String(this.unreadCount())));
 
   ngOnInit(): void {
     this.service.unreadCount$.subscribe((count) => this.unreadCount.set(count));
     // el contador viene del polling: lo refrescamos por si quedó desfasado
-    this.service.refreshUnread();
+    this.service.refreshUnread(this.vehicleId);
     this.loadPage(0, true);
   }
 
@@ -55,8 +56,9 @@ export class NotificationsPageComponent implements OnInit {
   }
 
   markAllRead(): void {
-    this.service.markAllRead();
+    this.service.markAllRead(this.vehicleId);
     this.items.update((list) => list.map((n) => ({ ...n, is_read: true })));
+    this.unreadCount.set(0);
   }
 
   loadMore(): void {
