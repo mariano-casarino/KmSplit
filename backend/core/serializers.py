@@ -183,6 +183,7 @@ class SettlementDetailSerializer(serializers.ModelSerializer):
 class SettlementSerializer(serializers.ModelSerializer):
     details = SettlementDetailSerializer(many=True, read_only=True)
     load_date = serializers.DateField(source="fuel_load.load_date", read_only=True)
+    loaded_by = serializers.IntegerField(source="fuel_load.loaded_by_id", read_only=True)
     loaded_by_name = serializers.CharField(source="fuel_load.loaded_by.name", read_only=True)
 
     class Meta:
@@ -190,6 +191,6 @@ class SettlementSerializer(serializers.ModelSerializer):
         fields = [
             "id", "vehicle", "fuel_load", "period_start_km", "period_end_km",
             "total_amount", "unassigned_km", "status", "status_updated_by",
-            "created_at", "load_date", "loaded_by_name", "details",
+            "created_at", "load_date", "loaded_by", "loaded_by_name", "details",
         ]
         read_only_fields = fields
