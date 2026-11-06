@@ -122,8 +122,15 @@ def recalculate_settlement(settlement):
     share_count = len(split_user_ids) or 1  # evita división por cero
     unassigned_share = Decimal(unassigned_km) / Decimal(share_count)
 
+    # Preservar estado de pago al recalcular (se regeneran los detalles)
+    previous_paid = {
+        d.user_id: (d.paid, d.paid_at, d.paid_by_id)
+        for d in settlement.details.all()
+    }
+
     settlement.details.all().delete()
 
+    loader_id = settlement.fuel_load.loaded_by_id
     details = []
     for membership in active_memberships:
         registered_km = registered_by_user.get(membership.user_id, 0)
@@ -137,6 +144,16 @@ def recalculate_settlement(settlement):
 
         amount_owed = (percentage / Decimal("100")) * settlement.total_amount
 
+        # Quien registró la carga queda marcado como pagado automáticamente.
+        # Se preserva el estado previo de otros integrantes si existía.
+        prev = previous_paid.get(membership.user_id)
+        if membership.user_id == loader_id:
+            paid, paid_at, paid_by_id = True, None, None
+        elif prev:
+            paid, paid_at, paid_by_id = prev
+        else:
+            paid, paid_at, paid_by_id = False, None, None
+
         details.append(
             SettlementDetail(
                 settlement=settlement,
@@ -146,6 +163,9 @@ def recalculate_settlement(settlement):
                 km_driven=_quantize(km_driven),
                 percentage=_quantize(percentage),
                 amount_owed=_quantize(amount_owed),
+                paid=paid,
+                paid_at=paid_at,
+                paid_by_id=paid_by_id,
             )
         )
 

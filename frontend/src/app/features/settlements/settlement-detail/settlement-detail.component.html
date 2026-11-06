@@ -11,8 +11,15 @@
     <p class="field-error">{{ errorMessage() }}</p>
   } @else if (settlement()) {
     <div class="settlement-summary">
+      @if (settlement()!.loaded_by_name) {
+        <p class="muted">
+          Carga registrada por <strong>{{ settlement()!.loaded_by_name }}</strong> 
+          @if (settlement()!.load_date) { · {{ formatDate(settlement()!.load_date) }} }
+        </p>
+      }<br>
+
       <p class="muted">Período</p>
-      <p class="settlement-period">{{ settlement()!.period_start_km | argNumber }} → {{ settlement()!.period_end_km | argNumber }} = {{ periodKm() | argNumber }} km</p>
+      <p class="settlement-period">{{ settlement()!.period_start_km | argNumber }} → {{ settlement()!.period_end_km | argNumber }} = <strong> {{ periodKm() | argNumber }} km </strong> </p>
 
       <div class="summary-grid">
         <div>

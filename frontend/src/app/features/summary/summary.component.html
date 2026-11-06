@@ -77,6 +77,13 @@
       <a class="btn btn-secondary" [routerLink]="['/vehiculo', vehicleId, 'historial', 'semana']">
         Últimos 7 días
       </a>
+      <a
+        class="btn btn-secondary"
+        [routerLink]="['/vehiculo', vehicleId, 'resumen', 'pagos']"
+        [queryParams]="{ from: 'resumen' }"
+      >
+        Pagos
+      </a>
       <a class="btn btn-secondary" [routerLink]="['/vehiculo', vehicleId, 'historial']">
         Historial
       </a>

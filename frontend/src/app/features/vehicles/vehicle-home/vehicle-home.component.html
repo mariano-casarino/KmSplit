@@ -124,6 +124,18 @@
       </span>
     </a>
 
+    <a
+      class="action-card"
+      [routerLink]="['/vehiculo', vehicleId, 'resumen', 'pagos']"
+      [queryParams]="{ from: 'inicio' }"
+    >
+      <span class="action-icon action-icon-money">$</span>
+      <span>
+        <span class="action-title">Liquidaciones</span>
+        <span class="action-subtitle">Saldo a pagar: ${{ saldoAPagar() | argNumber: 'money' }}</span>
+      </span>
+    </a>
+
     <a class="action-card" [routerLink]="['/vehiculo', vehicleId, 'resumen']">
       <span class="action-icon">📊</span>
       <span>

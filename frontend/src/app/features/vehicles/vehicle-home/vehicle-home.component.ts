@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { Group, GroupMembership, GroupRole } from '../../../core/models/group.model';
+import { Settlement } from '../../../core/models/settlement.model';
 import { Vehicle } from '../../../core/models/vehicle.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { GroupService } from '../../../core/services/group.service';
@@ -44,12 +45,25 @@ export class VehicleHomeComponent implements OnInit {
 
   vehicle = signal<Vehicle | null>(null);
   group = signal<Group | null>(null);
+  settlements = signal<Settlement[]>([]);
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   photoSaving = signal(false);
   photoMessage = signal<string | null>(null);
   currentUserId = signal(0);
   myRole = signal<GroupRole | null>(null);
+
+  /** Saldo a pagar del usuario: suma de amount_owed no tildado en liquidaciones. */
+  saldoAPagar = computed(() => {
+    const uid = this.currentUserId();
+    if (!uid) return 0;
+    let total = 0;
+    for (const s of this.settlements()) {
+      const detail = s.details?.find((d) => d.user === uid);
+      if (detail && !detail.paid) total += Number(detail.amount_owed) || 0;
+    }
+    return total;
+  });
 
   ngOnInit(): void {
     this.loadVehicle();
@@ -59,30 +73,23 @@ export class VehicleHomeComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    // fetchMe y vehicle son independientes: corren en paralelo. fetchMe es
-    // resiliente (si falla, el vehículo igual se muestra); vehicle.group
-    // (depende del vehicle) se consulta después, ya cacheado.
+    // dashboard() trae vehicle + group + settlements en 1 request (y más);
+    // fetchMe es resiliente: si falla, el inicio igual se muestra.
     forkJoin({
       user: this.auth.fetchMe().pipe(retryTransient(3), catchError(() => of(null))),
-      vehicle: this.vehicleService.get(this.vehicleId).pipe(retryTransient(3)),
+      dashboard: this.vehicleService.dashboard(this.vehicleId).pipe(retryTransient(3)),
     }).subscribe({
-      next: ({ user, vehicle }) => {
+      next: ({ user, dashboard }) => {
+        const { vehicle, group, settlements } = dashboard;
         if (user) this.currentUserId.set(user.id);
         this.vehicleService.setLastVehicleId(vehicle.id);
-        // el grupo del vehículo pasa a ser el "activo" para que el botón
-        // volver (‹) te devuelva siempre a la lista de su grupo
         this.groupService.setActiveGroupId(vehicle.group);
         this.vehicle.set(vehicle);
-
-        this.groupService.get(vehicle.group).subscribe({
-          next: (group) => {
-            this.group.set(group);
-            const membership = group.members.find((m) => m.user === this.currentUserId());
-            this.myRole.set(membership?.role ?? null);
-            this.loading.set(false);
-          },
-          error: () => this.loading.set(false),
-        });
+        this.group.set(group);
+        this.settlements.set(settlements ?? []);
+        const membership = user ? group.members.find((m) => m.user === user.id) : undefined;
+        this.myRole.set(membership?.role ?? null);
+        this.loading.set(false);
       },
       error: () => this.failLoading(),
     });
