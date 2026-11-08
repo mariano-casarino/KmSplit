@@ -107,16 +107,15 @@ export class TripFormComponent implements OnInit {
           (maxKm, t) => Math.max(maxKm, t.end_km),
           vehicle.current_km,
         );
-        // Si viene desde "Km sin registrar", es la excepción: hay que rellenar ese hueco
+        // Si viene desde "Km sin registrar", es la excepción: hay que rellenar ese hueco.
+        // end_km es un atajo (últimos dígitos): debe calcular al km final del hueco (gapEndKm),
+        // no al tamaño del hueco (diff). Usamos los últimos 3 dígitos de gapEndKm.
         if (gapStartKm !== null && gapEndKm !== null && gapEndKm > gapStartKm) {
           this.defaultStartKm = gapStartKm;
-          this.form.patchValue({ start_km: this.defaultStartKm });
-          const diff = gapEndKm - gapStartKm;
-          if (diff > 0 && diff < 1000) {
-            this.form.patchValue({ end_km: String(diff).padStart(3, '0').slice(-3) });
-          } else {
-            this.form.patchValue({ end_km: String(gapEndKm % 1000).padStart(3, '0') });
-          }
+          this.form.patchValue({
+            start_km: this.defaultStartKm,
+            end_km: String(gapEndKm % 1000).padStart(3, '0'),
+          });
         } else {
           // Registro normal: SIEMPRE el mayor km final registrado
           this.defaultStartKm = this.maxRegisteredKm;
