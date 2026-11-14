@@ -32,7 +32,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -54,14 +54,14 @@
 
 .vehicle-photo-placeholder {
   color: var(--gray-500);
-  font-size: 13px;
+  font-size: 14px;
   text-align: center;
   line-height: 1.6;
 }
 
 .vehicle-photo-admin-needed {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .vehicle-photo-remove {
@@ -72,7 +72,7 @@
 
 .vehicle-photo-status {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--green);
 }
 
@@ -121,7 +121,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 19px;
   flex-shrink: 0;
 }
 
@@ -133,14 +133,14 @@
 
 .action-title {
   display: block;
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--gray-900);
 }
 
 .action-subtitle {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--gray-500);
 }
 

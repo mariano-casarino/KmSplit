@@ -37,19 +37,19 @@
 }
 
 .banner-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--gray-700);
   margin: 0 0 2px;
 }
 
 .banner-text {
-  font-size: 13px;
+  font-size: 14px;
   margin: 0;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--gray-700);
   text-transform: uppercase;
@@ -168,7 +168,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
 
   /* el texto largo se recorta antes de empujar el ícono de editar */
@@ -180,17 +180,17 @@
 }
 
 .record-icon {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .edit-hint {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.6;
   flex-shrink: 0;
 }
 
 .badge {
-  font-size: 10.5px;
+  font-size: 12px;
   background: var(--blue-100);
   color: var(--blue-700);
   padding: 3px 8px;
@@ -206,7 +206,7 @@
   flex-wrap: wrap;
 
   .btn {
-    font-size: 12.5px;
+    font-size: 13.5px;
     padding: 11px;
     flex: 1 1 0;
     min-width: 96px;
@@ -230,7 +230,7 @@
 .tab {
   flex: 1;
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12.5px;
   padding: 8px 0;
   border-radius: 8px;
   color: var(--gray-700);
@@ -283,7 +283,7 @@
 }
 
 .bar-label {
-  font-size: 9px;
+  font-size: 10.5px;
   color: var(--gray-700);
   text-align: center;
 }
@@ -293,7 +293,7 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--gray-700);
 }
 

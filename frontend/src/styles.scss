@@ -10,7 +10,8 @@
 
   --gray-900: #1f2933;
   --gray-700: #52606d;
-  --gray-500: #8a97a6;
+  /* Antes #8a97a6 (~3:1 sobre blanco). Este gris pasa AA para texto chico. */
+  --gray-500: #6b7785;
   --gray-300: #cbd2d9;
   --gray-100: #f0f2f5;
   --white: #ffffff;
@@ -23,6 +24,18 @@
 
   --radius: 14px;
   --radius-sm: 10px;
+
+  /* Tipografía: stack nativo (San Francisco en iOS, Segoe UI en Windows,
+     Roboto en Android) y escala base reutilizable. */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13.5px;
+  --fs-base: 15px;
+  --fs-md: 16px;
+  --fs-lg: 17px;
+  --fs-xl: 22px;
+  --lh-base: 1.5;
 }
 
 * {
@@ -42,7 +55,10 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  font-variant-numeric: tabular-nums;
   background: var(--gray-100);
   color: var(--gray-900);
   -webkit-font-smoothing: antialiased;
@@ -129,7 +145,7 @@ input[type='date'] {
 
 .field-error {
   color: var(--red);
-  font-size: 12.5px;
+  font-size: 13px;
   margin: 4px 0 0;
 }
 
@@ -179,8 +195,9 @@ input[type='date'] {
   border: none;
   background: var(--blue-500);
   color: var(--white);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.2;
   text-align: center;
   cursor: pointer;
   transition: background 0.15s ease, opacity 0.15s ease;
@@ -252,7 +269,7 @@ input[type='date'] {
 /* Links */
 .link {
   color: var(--blue-500);
-  font-size: 13.5px;
+  font-size: 14px;
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
@@ -268,7 +285,7 @@ input[type='date'] {
   align-items: center;
   gap: 10px;
   color: var(--gray-500);
-  font-size: 11px;
+  font-size: 12px;
   margin: 6px 0;
 
   &::before,
@@ -285,7 +302,7 @@ input[type='date'] {
   background: #e6f5ea;
   border: 1px solid var(--green);
   color: #1e7a45;
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   display: flex;
@@ -298,7 +315,7 @@ input[type='date'] {
   background: #fbf1de;
   border: 1px solid var(--amber);
   color: #8a5c1a;
-  font-size: 12.5px;
+  font-size: 13.5px;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   display: flex;
@@ -327,7 +344,7 @@ input[type='date'] {
   }
 
   h1 {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 800;
     color: var(--gray-900);
     margin: 0;
@@ -377,7 +394,7 @@ input[type='date'] {
 
 .muted {
   color: var(--gray-500);
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
 .select-field {

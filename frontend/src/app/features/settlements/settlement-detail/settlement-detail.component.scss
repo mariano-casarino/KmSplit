@@ -6,7 +6,7 @@
 }
 
 .settlement-period {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--gray-900);
   margin: 2px 0 14px;
@@ -48,7 +48,7 @@
 .edit-btn,
 .delete-btn {
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   font-family: inherit;
   border-radius: var(--radius-sm);
@@ -69,7 +69,7 @@
 }
 
 .status-badge {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--amber);
 
@@ -79,7 +79,7 @@
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--gray-700);
   text-transform: uppercase;
@@ -121,7 +121,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--white);
   padding: 0;
@@ -140,17 +140,17 @@
 
 .detail-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--gray-900);
 }
 
 .detail-amount {
   font-weight: 800;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--blue-500);
 }
 
 .detail-breakdown {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
 }

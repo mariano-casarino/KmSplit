@@ -14,7 +14,7 @@
 .fuel-label {
   width: 90px;
   flex-shrink: 0;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--gray-700);
 }
@@ -53,7 +53,7 @@
 }
 
 .banner-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--gray-700);
   flex-shrink: 0;
@@ -61,7 +61,7 @@
 }
 
 .banner-text {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--gray-700);
   line-height: 1.45;
   margin: 0;
@@ -72,7 +72,7 @@
   color: var(--white);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-align: center;
   margin: 0;
@@ -83,7 +83,7 @@
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--gray-700);
   text-transform: uppercase;
@@ -128,7 +128,7 @@
 
 .settlement-label {
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -136,10 +136,10 @@
 }
 
 .settlement-status {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .edit-hint {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.6;
 }
