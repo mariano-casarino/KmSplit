@@ -15,7 +15,11 @@ function formatArgNumber(value: number | string, maxDecimals: number): string {
   const [intPart, decPart] = fixed.split('.');
   const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-  return decPart ? `${withThousands},${decPart}` : withThousands;
+  // Montos/decimales enteros: no mostramos ",00" (ej. $15.000 en vez de
+  // $15.000,00). Si hay decimales reales, se mantienen los dos dígitos.
+  if (!decPart || /^0+$/.test(decPart)) return withThousands;
+
+  return `${withThousands},${decPart}`;
 }
 
 /** Km enteros: 183222 -> "183.222" (sin decimales). */

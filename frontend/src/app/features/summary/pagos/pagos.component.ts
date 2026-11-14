@@ -17,7 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { FuelLoadService } from '../../../core/services/fuel-load.service';
 import { SettlementService } from '../../../core/services/settlement.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
-import { formatKm } from '../../../core/utils/format-args';
+import { formatKm, formatMoney } from '../../../core/utils/format-args';
 import { ArgNumberPipe } from '../../../shared/pipes/arg-number.pipe';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
@@ -266,7 +266,7 @@ export class PagosComponent implements OnInit {
   settlementLabel(s: Settlement): string {
     const date = s.load_date ? this.formatDate(s.load_date) : '';
     const who = s.loaded_by_name ?? '';
-    return `${date} · ${who} · $${s.total_amount} · ${formatKm(s.period_end_km)} km`;
+    return `${date} · ${who} · $${formatMoney(s.total_amount)} · ${formatKm(s.period_end_km)} km`;
   }
 
   formatDate(iso: string): string {
