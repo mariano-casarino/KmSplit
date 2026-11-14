@@ -136,7 +136,7 @@
                             >
                               @if (detail.paid) { ✓ }
                             </button>
-                          } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
+                          } @else if (canMarkPaid(s) && detail.amount_owed <= 0 && detail.unassigned_km_share <= 0) {
                             <span class="paid-checkbox checked" aria-hidden="true">✓</span>
                           }
                         </div>
