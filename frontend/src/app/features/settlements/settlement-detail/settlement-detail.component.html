@@ -85,7 +85,7 @@
                 >
                   @if (detail.paid) { ✓ }
                 </button>
-              } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
+              } @else if (canMarkPaid() && detail.amount_owed <= 0 && detail.unassigned_km_share <= 0) {
                 <span class="paid-checkbox checked" aria-hidden="true">✓</span>
               }
             </div>
@@ -93,7 +93,7 @@
           <p class="muted detail-breakdown">
             {{ detail.registered_km | argNumber }} km propios
             @if (detail.unassigned_km_share > 0) {
-              + {{ detail.unassigned_km_share | argNumber: 'decimal' }} km del reparto equitativo
+              + {{ detail.unassigned_km_share | argNumber: 'decimal' }} km del reparto
             }
             = {{ detail.km_driven | argNumber: 'decimal' }} km ({{ detail.percentage | argNumber: 'decimal' }}%)
           </p>

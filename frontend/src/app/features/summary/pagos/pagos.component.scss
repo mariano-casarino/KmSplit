@@ -1,12 +1,12 @@
 .page-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--gray-700);
   line-height: 1.45;
   margin: 0 0 14px;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--gray-700);
   text-transform: uppercase;
@@ -32,13 +32,13 @@
 }
 
 .saldo-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--gray-700);
 }
 
 .saldo-value {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   color: var(--gray-900);
 }
@@ -90,7 +90,7 @@
 }
 
 .card-kicker {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--blue-600, var(--blue-500));
   text-transform: uppercase;
@@ -105,18 +105,18 @@
 }
 
 .settlement-status {
-  font-size: 14px;
+  font-size: 15px;
   flex-shrink: 0;
 }
 
 .settlement-label {
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
   line-height: 1.35;
 }
 
 .card-chevron {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--gray-500);
   flex-shrink: 0;
   padding-top: 2px;
@@ -137,7 +137,7 @@
 }
 
 .settlement-period {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--gray-900);
   margin: 2px 0 14px;
@@ -171,8 +171,40 @@
   gap: 8px;
 }
 
+.manage-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-btn,
+.delete-btn {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.edit-btn {
+  color: var(--blue-500);
+  border: 1px solid var(--blue-500);
+  background: transparent;
+}
+
+.delete-btn {
+  color: var(--red);
+  border: 1px solid var(--red);
+  background: transparent;
+}
+
+.action-error {
+  margin: 0 0 14px;
+}
+
 .status-badge {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--amber);
 
@@ -215,7 +247,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--white);
   padding: 0;
@@ -234,25 +266,54 @@
 
 .detail-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--gray-900);
 }
 
 .detail-amount {
   font-weight: 800;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--blue-500);
 }
 
 .detail-breakdown {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
 .card-actions {
+  display: flex;
+  justify-content: center;
   margin-top: 12px;
 }
 
 .ver-menos {
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--blue-500);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--blue-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--blue-500);
+    outline-offset: 2px;
+  }
+}
+
+.ver-menos-chevron {
+  font-size: 12px;
+  line-height: 1;
 }

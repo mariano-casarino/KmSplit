@@ -8,7 +8,7 @@ import { FuelLoad } from '../../../core/models/fuel-load.model';
 import { FuelLoadService } from '../../../core/services/fuel-load.service';
 import { SettlementService } from '../../../core/services/settlement.service';
 import { VehicleService } from '../../../core/services/vehicle.service';
-import { formatKm } from '../../../core/utils/format-args';
+import { formatKm, formatMoney } from '../../../core/utils/format-args';
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 import { BackButtonComponent } from '../../../shared/back-button/back-button.component';
@@ -37,8 +37,10 @@ export class FuelLoadFormComponent {
   editId = signal<number | null>(null);
   /** Id de la liquidación de la que venimos al editar (?liquidacion=). */
   settlementId = signal<number | null>(null);
-  /** Origen: 'carga', 'historial' u otro (?from=). */
+  /** Origen: 'carga', 'historial', 'pagos' u otro (?from=). */
   returnPath = signal('carga');
+  /** Si from=pagos, desde qué pantalla de Cargas se abrió ('inicio'/'resumen'). */
+  pagosFrom = signal('resumen');
   editLoading = signal(false);
 
   loading = signal(false);
@@ -68,6 +70,7 @@ export class FuelLoadFormComponent {
     this.editId.set(next);
     this.settlementId.set(this.paramOrNull('liquidacion'));
     this.returnPath.set(this.route.snapshot.queryParamMap.get('from') ?? 'carga');
+    this.pagosFrom.set(this.route.snapshot.queryParamMap.get('pagosFrom') ?? 'resumen');
 
     if (next == null) {
       this.editLoading.set(false);
@@ -103,6 +106,10 @@ export class FuelLoadFormComponent {
    * de vuelta a esa liquidación; si no, a la vista de carga.
    */
   private backUrl(): string {
+    // Si se editó desde Cargas (Pagos), volvemos a esa misma pantalla.
+    if (this.returnPath() === 'pagos') {
+      return `/vehiculo/${this.vehicleId}/resumen/pagos?from=${this.pagosFrom()}`;
+    }
     const settlementId = this.settlementId();
     if (settlementId != null) {
       return `/vehiculo/${this.vehicleId}/liquidacion/${settlementId}?from=${this.returnPath()}`;
@@ -158,7 +165,7 @@ export class FuelLoadFormComponent {
   settlementLabel(s: Settlement): string {
     const date = s.load_date ? this.formatDate(s.load_date) : '';
     const who = s.loaded_by_name ?? '';
-    return `${date} · ${who} · $${s.total_amount} · ${formatKm(s.period_end_km)} km`;
+    return `${date} · ${who} · $${formatMoney(s.total_amount)} · ${formatKm(s.period_end_km)} km`;
   }
 
   private formatDate(iso: string): string {

@@ -10,7 +10,7 @@
 .tab {
   flex: 1;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   padding: 8px 0;
   border-radius: 8px;
   color: var(--gray-700);
@@ -141,7 +141,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 0;
 
   /* el texto largo se recorta antes de empujar el ícono de editar */
@@ -153,7 +153,7 @@
 }
 
 .badge {
-  font-size: 10.5px;
+  font-size: 12px;
   background: var(--blue-100);
   color: var(--blue-700);
   padding: 3px 8px;
@@ -163,11 +163,11 @@
 }
 
 .record-icon {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .edit-hint {
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.6;
   flex-shrink: 0;
 }
@@ -186,7 +186,7 @@
 }
 
 .gaps-title {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--gray-700);
   margin: 0;
@@ -200,7 +200,7 @@
 }
 
 .gaps-summary {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--gray-500);
   margin: 0 0 10px;
 }
@@ -228,7 +228,7 @@
 }
 
 .gap-range {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--gray-900);
   margin: 0 0 3px;
 
@@ -238,7 +238,7 @@
 }
 
 .gap-context {
-  font-size: 11.5px;
+  font-size: 12.5px;
   margin: 0;
 }
 
@@ -249,7 +249,7 @@
   border-radius: 999px;
   background: var(--blue-100);
   color: var(--blue-500);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -268,7 +268,7 @@
   border-radius: var(--radius-sm);
   background: var(--gray-100);
   color: var(--gray-700);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
 }

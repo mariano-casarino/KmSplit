@@ -24,7 +24,11 @@
   </div>
 
   <p class="page-desc">
-    En esta parte vas a poder encontrar todas las liquidaciones, que son lo que se genera luego de registrar una carga de combustible. Ahí vas a encontrar el detalle de lo que debe pagar cada integrante, kilómetros recorridos en ese período, km repartidos y mucha más información.
+    @if (showFullDesc()) {
+      En esta parte vas a poder encontrar todas las liquidaciones, que son lo que se genera luego de registrar una carga de combustible. Ahí vas a encontrar el detalle de lo que debe pagar cada integrante, kilómetros recorridos en ese período, km repartidos y mucha más información.
+    } @else {
+      Todas las liquidaciones con el saldo a pagar y el detalle de cada período.
+    }
   </p>
 
   @if (loading()) {
@@ -38,6 +42,10 @@
       <span class="saldo-label">Saldo a pagar:</span>
       <span class="saldo-value">${{ saldoAPagar() | argNumber: 'money' }}</span>
     </div>
+
+    @if (actionError()) {
+      <p class="field-error action-error">{{ actionError() }}</p>
+    }
 
     @if (settlements().length === 0) {
       <p class="muted">Todavía no hay liquidaciones para este vehículo.</p>
@@ -95,6 +103,12 @@
                   </div>
 
                   <div class="status-row">
+                    @if (canManage(s)) {
+                      <div class="manage-actions">
+                        <button class="edit-btn" type="button" (click)="editLoad(s)">Editar</button>
+                        <button class="delete-btn" type="button" (click)="confirmDelete(s)">Eliminar</button>
+                      </div>
+                    }
                     <div class="status-line">
                       <span class="status-badge" [class.paid]="unpaidNames(s).length === 0">
                         {{ unpaidNames(s).length === 0 ? '✅ Pagado' : '⏳ Pendiente' }}{{ unpaidNames(s).length > 0 ? ' (' + unpaidNames(s).join(', ') + ')' : '' }}
@@ -122,7 +136,7 @@
                             >
                               @if (detail.paid) { ✓ }
                             </button>
-                          } @else if (detail.amount_owed <= 0 && (detail.unassigned_km_share ?? 0) <= 0) {
+                          } @else if (canMarkPaid(s) && detail.amount_owed <= 0 && detail.unassigned_km_share <= 0) {
                             <span class="paid-checkbox checked" aria-hidden="true">✓</span>
                           }
                         </div>
@@ -130,7 +144,7 @@
                       <p class="muted detail-breakdown">
                         {{ detail.registered_km | argNumber }} km propios
                         @if (detail.unassigned_km_share > 0) {
-                          + {{ detail.unassigned_km_share | argNumber: 'decimal' }} km del reparto equitativo
+                          + {{ detail.unassigned_km_share | argNumber: 'decimal' }} km del reparto
                         }
                         = {{ detail.km_driven | argNumber: 'decimal' }} km ({{ detail.percentage | argNumber: 'decimal' }}%)
                       </p>
@@ -139,7 +153,10 @@
                 </div>
 
                 <div class="card-actions">
-                  <button class="btn btn-secondary ver-menos" type="button" (click)="collapse(s.id)">Ver menos</button>
+                  <button class="ver-menos" type="button" (click)="collapse(s.id)">
+                    <span class="ver-menos-chevron" aria-hidden="true">▲</span>
+                    Ver menos
+                  </button>
                 </div>
               </div>
             }
@@ -147,6 +164,20 @@
         }
       </div>
     }
+  }
+
+  @if (deleteDialog()) {
+    <app-confirm-dialog
+      title="Eliminar carga"
+      [message]="confirmDeleteMessage()"
+      warning="Solo se puede eliminar la última carga. Al hacerlo, esta liquidación y la referencia de kilómetros van a desaparecer."
+      confirmLabel="Sí, eliminar"
+      cancelLabel="Cancelar"
+      variant="danger"
+      [busy]="deleting()"
+      (confirmed)="doDelete()"
+      (cancelled)="cancelDelete()"
+    />
   }
 
   <app-bottom-nav [vehicleId]="vehicleId" />

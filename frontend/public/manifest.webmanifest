@@ -1,21 +1,30 @@
 {
+  "id": "/",
   "name": "KmSplit",
   "short_name": "KmSplit",
   "description": "Repartí el combustible, no las discusiones",
+  "lang": "es-AR",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#f2f4f8",
   "theme_color": "#2f6fed",
+  "categories": ["utilities", "travel", "finance"],
   "icons": [
     {
       "src": "/kmsplit-icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/kmsplit-icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
