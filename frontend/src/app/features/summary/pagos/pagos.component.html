@@ -43,6 +43,10 @@
       <span class="saldo-value">${{ saldoAPagar() | argNumber: 'money' }}</span>
     </div>
 
+    @if (actionError()) {
+      <p class="field-error action-error">{{ actionError() }}</p>
+    }
+
     @if (settlements().length === 0) {
       <p class="muted">Todavía no hay liquidaciones para este vehículo.</p>
     } @else {
@@ -99,6 +103,12 @@
                   </div>
 
                   <div class="status-row">
+                    @if (canManage(s)) {
+                      <div class="manage-actions">
+                        <button class="edit-btn" type="button" (click)="editLoad(s)">Editar</button>
+                        <button class="delete-btn" type="button" (click)="confirmDelete(s)">Eliminar</button>
+                      </div>
+                    }
                     <div class="status-line">
                       <span class="status-badge" [class.paid]="unpaidNames(s).length === 0">
                         {{ unpaidNames(s).length === 0 ? '✅ Pagado' : '⏳ Pendiente' }}{{ unpaidNames(s).length > 0 ? ' (' + unpaidNames(s).join(', ') + ')' : '' }}
@@ -151,6 +161,20 @@
         }
       </div>
     }
+  }
+
+  @if (deleteDialog()) {
+    <app-confirm-dialog
+      title="Eliminar carga"
+      [message]="confirmDeleteMessage()"
+      warning="Solo se puede eliminar la última carga. Al hacerlo, esta liquidación y la referencia de kilómetros van a desaparecer."
+      confirmLabel="Sí, eliminar"
+      cancelLabel="Cancelar"
+      variant="danger"
+      [busy]="deleting()"
+      (confirmed)="doDelete()"
+      (cancelled)="cancelDelete()"
+    />
   }
 
   <app-bottom-nav [vehicleId]="vehicleId" />
