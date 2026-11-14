@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../../core/models/user.model';
 import { AuthService } from '../../core/services/auth.service';
 import { GroupService } from '../../core/services/group.service';
+import { InstallService } from '../../core/services/install.service';
 import { AvatarComponent } from '../../shared/avatar/avatar.component';
 import { BackButtonComponent } from '../../shared/back-button/back-button.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -28,6 +29,7 @@ export class ProfileComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private groups = inject(GroupService);
+  install = inject(InstallService);
 
   /** Desde dónde se abrió el perfil: 'grupos' (selector) o 'vehiculos' (dentro
    *  de un grupo). Determina a dónde vuelve el botón de atrás. */

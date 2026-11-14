@@ -197,6 +197,30 @@
       </form>
     </div>
 
+    @if (!install.isInstalled()) {
+      <div class="profile-section">
+        <h2>Instalar app</h2>
+        @if (install.canInstall()) {
+          <p class="install-hint">
+            Instalá KmSplit en tu dispositivo para abrirla como app, sin la barra del navegador.
+          </p>
+          <button class="btn" type="button" (click)="install.promptInstall()">
+            Instalar KmSplit
+          </button>
+        } @else if (install.isIos()) {
+          <p class="install-hint">
+            En iPhone/iPad: tocá <strong>Compartir</strong> (⬆️) en Safari y elegí
+            <strong>Agregar a inicio</strong>.
+          </p>
+        } @else {
+          <p class="install-hint">
+            En Chrome o Edge: abrí el menú (⋮) y elegí <strong>Instalar app</strong>
+            (o “Instalar KmSplit”).
+          </p>
+        }
+      </div>
+    }
+
     <app-danger-button label="Cerrar sesión" (clicked)="requestLogout()" />
   }
 </div>

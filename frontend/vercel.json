@@ -1,4 +1,14 @@
 {
+  "headers": [
+    {
+      "source": "/ngsw-worker.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/ngsw.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://kmsplit-production.up.railway.app/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
