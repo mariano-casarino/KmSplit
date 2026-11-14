@@ -24,7 +24,11 @@
   </div>
 
   <p class="page-desc">
-    En esta parte vas a poder encontrar todas las liquidaciones, que son lo que se genera luego de registrar una carga de combustible. Ahí vas a encontrar el detalle de lo que debe pagar cada integrante, kilómetros recorridos en ese período, km repartidos y mucha más información.
+    @if (showFullDesc()) {
+      En esta parte vas a poder encontrar todas las liquidaciones, que son lo que se genera luego de registrar una carga de combustible. Ahí vas a encontrar el detalle de lo que debe pagar cada integrante, kilómetros recorridos en ese período, km repartidos y mucha más información.
+    } @else {
+      Todas las liquidaciones con el saldo a pagar y el detalle de cada período.
+    }
   </p>
 
   @if (loading()) {

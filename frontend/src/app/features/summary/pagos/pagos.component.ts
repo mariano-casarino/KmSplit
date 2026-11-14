@@ -21,6 +21,9 @@ import { BackButtonComponent } from '../../../shared/back-button/back-button.com
 import { BottomNavComponent } from '../../../shared/bottom-nav/bottom-nav.component';
 import { NotificationsBellComponent } from '../../../shared/notifications-bell/notifications-bell.component';
 
+/** Marca en el dispositivo que la descripción larga de Cargas ya se mostró. */
+const DESC_SEEN_KEY = 'kmsplit.pagos.descSeen';
+
 @Component({
   selector: 'app-pagos',
   standalone: true,
@@ -48,6 +51,8 @@ export class PagosComponent implements OnInit {
   profileBack = `/vehiculo/${this.vehicleId}/resumen/pagos${this.from === 'inicio' ? '?from=inicio' : '?from=resumen'}`;
 
   loading = signal(true);
+  /** Primera visita: descripción larga. Visitas siguientes: texto corto. */
+  showFullDesc = signal(!this.readDescSeen());
 
   /** Ruta de "volver" según el origen de la visita. */
   backRoute(): (string | number)[] {
@@ -77,6 +82,8 @@ export class PagosComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.markDescSeen();
+
     forkJoin({
       user: this.auth.fetchMe().pipe(catchError(() => of(null))),
       dashboard: this.vehicleService.dashboard(this.vehicleId),
@@ -195,5 +202,23 @@ export class PagosComponent implements OnInit {
         this.errorMessage.set('No pudimos marcar el pago.');
       },
     });
+  }
+
+  /** localStorage puede fallar en modo privado o con permisos bloqueados:
+   *  en ese caso cae siempre en la descripción larga. */
+  private readDescSeen(): boolean {
+    try {
+      return localStorage.getItem(DESC_SEEN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private markDescSeen(): void {
+    try {
+      localStorage.setItem(DESC_SEEN_KEY, '1');
+    } catch {
+      // sin storage: la próxima visita vuelve a mostrar la descripción larga
+    }
   }
 }
