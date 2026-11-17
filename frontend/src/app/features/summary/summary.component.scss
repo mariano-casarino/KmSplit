@@ -145,30 +145,32 @@
     top: 0;
     bottom: 0;
     z-index: -1;
-    background: var(--gray-100);
+    background-color: transparent;
+    /* La barrita de 3px es el borde del propio fondo: no ocupa espacio en la
+       fila y, al ser un color, se puede desvanecer junto con el celeste. */
+    border-left: 3px solid transparent;
     opacity: 0;
     pointer-events: none;
     /* el hover entra rápido; el apagado del resalte, progresivo */
-    transition: opacity 0.45s ease;
+    transition: opacity 0.45s ease, background-color 0.45s ease,
+      border-color 0.45s ease;
   }
 
   /* Solo en dispositivos con mouse: en mobile el :hover queda "pegado" y el
      navegador puede aplicarlo antes del click. Sin hover, nada se mueve. */
   @media (hover: hover) {
     &.clickable:hover:not(.highlighted)::before {
+      background-color: var(--gray-100);
       opacity: 1;
       transition-duration: 0.15s;
     }
   }
 
-  /* Fila a la que se llegó desde una notificación: celeste en toda la fila,
-     más la barrita en el borde izquierdo de la caja. */
+  /* Fila a la que se llegó desde una notificación: celeste más marcado en toda
+     la fila, más la barrita en el borde izquierdo de la caja. */
   &.highlighted::before {
-    background: linear-gradient(
-      to right,
-      var(--blue-500) 0 3px,
-      var(--blue-100) 3px
-    );
+    background-color: var(--blue-150);
+    border-left-color: var(--blue-500);
     opacity: 1;
   }
 }
