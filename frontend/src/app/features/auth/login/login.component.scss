@@ -6,7 +6,10 @@
     font-size: 28px;
     font-weight: 800;
     color: var(--blue-500);
-    margin: 0;
+    /* Ancho del texto: así la intro puede medir el logo real y aterrizar
+       exactamente encima al terminar el vuelo. */
+    width: fit-content;
+    margin: 0 auto;
 
     span {
       color: var(--gray-900);
@@ -143,4 +146,128 @@
   border-radius: var(--radius-sm);
   text-align: center;
   margin: 0;
+}
+
+/* ============================================================
+   Intro de entrada
+   La K aparece sola en el centro, después la S, se arma el
+   wordmark y todo vuela hasta el logo real del login.
+   ============================================================ */
+.login-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--white);
+  opacity: 1;
+  transition: opacity 0.28s ease;
+
+  &.intro-done {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.intro-wordmark {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: clamp(72px, 22vw, 132px);
+  font-weight: 800;
+  line-height: normal;
+  color: var(--gray-900);
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: center center;
+  transition: transform 0.62s cubic-bezier(0.66, 0, 0.34, 1);
+  will-change: transform;
+
+  .intro-flying & {
+    transform: translate3d(var(--intro-dx, 0px), var(--intro-dy, 0px), 0)
+      scale(var(--intro-scale, 1));
+  }
+}
+
+.intro-char {
+  display: inline-block;
+}
+
+.intro-k {
+  color: var(--blue-500);
+  animation: intro-k-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+
+.intro-m {
+  color: var(--blue-500);
+  animation: intro-m-reveal 0.36s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+}
+
+.intro-s {
+  color: var(--gray-900);
+  animation: intro-s-in 0.48s cubic-bezier(0.16, 1, 0.3, 1) 0.46s both;
+}
+
+.intro-plit {
+  color: var(--gray-900);
+  animation: intro-plit-reveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.95s
+    both;
+}
+
+/* La S, la m y "plit" arrancan con ancho cero: la K aparece sola en el
+   centro y las demás letras se despliegan a su alrededor. */
+.intro-s,
+.intro-m,
+.intro-plit {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@keyframes intro-k-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.12em) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes intro-s-in {
+  from {
+    opacity: 0;
+    max-width: 0;
+    transform: translateX(-0.3em) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    max-width: var(--intro-s-w, 1em);
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes intro-m-reveal {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: var(--intro-m-w, 1em);
+  }
+}
+
+@keyframes intro-plit-reveal {
+  from {
+    max-width: 0;
+  }
+  to {
+    max-width: var(--intro-plit-w, 2em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-intro {
+    display: none;
+  }
 }
