@@ -19,6 +19,17 @@ export function recordKey(kind: RecordKind, id: number): string {
   return `${kind}-${id}`;
 }
 
+/**
+ * Fecha (YYYY-MM-DD) de hace `days` días, para cortar listas por fecha.
+ * Misma lógica que usa el historial en "Últimos 7 días", así las dos vistas
+ * muestran exactamente los mismos registros.
+ */
+export function isoDaysAgo(days: number, now: Date = new Date()): string {
+  const d = new Date(now);
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Un registroexpressed como tramo de km que ocupa. */
 export interface RecordKmRange {
   id: string;
@@ -71,8 +82,8 @@ export interface NotificationTarget {
   highlight: string | null;
 }
 
-/** Días que cubre la vista de "últimos 7 días". */
-const WEEK_DAYS = 7;
+/** Días que cubre la vista de "últimos 7 días" (historial y resumen). */
+export const WEEK_DAYS = 7;
 
 /** Lo que se pidió resaltar al llegar desde una notificación.
  *

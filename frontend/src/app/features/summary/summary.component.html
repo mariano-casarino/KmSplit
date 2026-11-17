@@ -44,11 +44,16 @@
       </button>
     }
 
-    <div class="section-title">Últimos registros</div>
+    <div class="section-title" id="recent-records-title">Últimos registros (7 días)</div>
     @if (recentRecords().length === 0) {
-      <p class="muted">Todavía no hay registros en este vehículo.</p>
+      <p class="muted">No hay registros en los últimos 7 días.</p>
     } @else {
-      <div class="records-list">
+      <div
+        class="records-list"
+        role="region"
+        aria-labelledby="recent-records-title"
+        tabindex="0"
+      >
         @for (record of recentRecords(); track record.id) {
           <button
             class="record-row"
@@ -74,9 +79,6 @@
     }
 
     <div class="quick-links">
-      <a class="btn btn-secondary" [routerLink]="['/vehiculo', vehicleId, 'historial', 'semana']">
-        Últimos 7 días
-      </a>
       <a
         class="btn btn-secondary"
         [routerLink]="['/vehiculo', vehicleId, 'resumen', 'pagos']"

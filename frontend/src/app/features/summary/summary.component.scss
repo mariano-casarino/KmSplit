@@ -62,7 +62,16 @@
   border-radius: var(--radius);
   padding: 0 12px;
   margin-bottom: 16px;
-  overflow: hidden;
+  /* El box muestra 6 filas (47px cada una + 2px de borde). Si en los últimos
+     7 días hay más registros, scrollea adentro: la pantalla no se estira y el
+     usuario navega la lista con el dedo. */
+  max-height: 225px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* al llegar al final de la lista, el scroll no se contagia a la pantalla */
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
 }
 
 .record-row {
