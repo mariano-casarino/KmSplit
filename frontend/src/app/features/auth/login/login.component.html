@@ -1,6 +1,6 @@
 <div class="screen">
   <div class="login-logo">
-    <h1>Km<span>Split</span></h1>
+    <h1 #loginTitle>Km<span>Split</span></h1>
     <p class="login-tagline">Repartí el combustible, no las discusiones</p>
   </div>
 
@@ -157,3 +157,20 @@
     </div>
   </form>
 </div>
+
+@if (introActive()) {
+  <div
+    class="login-intro"
+    aria-hidden="true"
+    [class.intro-flying]="introFlying()"
+    [class.intro-done]="introDone()"
+    (click)="skipIntro()"
+  >
+    <div class="intro-wordmark" #introWordmark>
+      <span class="intro-char intro-k">K</span>
+      <span class="intro-char intro-m">m</span>
+      <span class="intro-char intro-s">S</span>
+      <span class="intro-char intro-plit">plit</span>
+    </div>
+  </div>
+}

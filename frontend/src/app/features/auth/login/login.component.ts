@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -9,6 +18,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { GoogleAuthService } from '../../../core/services/google-auth.service';
 import { SessionResumeService } from '../../../core/services/session-resume.service';
 
+/** La intro: K y S aparecen, se arma el wordmark y a los 1,5 s vuela al
+ *  lugar del logo real. A los 2,15 s se desvanece y a los 2,48 s se saca. */
+const INTRO_FLIGHT_AT = 1500;
+const INTRO_FADE_AT = 2150;
+const INTRO_END_AT = 2480;
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -17,13 +32,23 @@ import { SessionResumeService } from '../../../core/services/session-resume.serv
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private googleAuth = inject(GoogleAuthService);
   private router = inject(Router);
   private sessionResume = inject(SessionResumeService);
   private destroyRef = inject(DestroyRef);
+
+  private loginTitle = viewChild<ElementRef<HTMLElement>>('loginTitle');
+  private introWordmark = viewChild<ElementRef<HTMLElement>>('introWordmark');
+
+  /** Intro de entrada (la K, después la S y el vuelo al logo del login).
+   *  Se saltea si el usuario pidió menos movimiento. */
+  introActive = signal(!LoginComponent.prefersReducedMotion());
+  introFlying = signal(false);
+  introDone = signal(false);
+  private introTimers: ReturnType<typeof setTimeout>[] = [];
 
   loading = signal(false);
   errorMessage = signal<string | null>(null);
@@ -40,6 +65,123 @@ export class LoginComponent {
     password: ['', [Validators.required]],
     rememberMe: [true],
   });
+
+  ngAfterViewInit(): void {
+    this.destroyRef.onDestroy(() => this.clearIntroTimers());
+    if (!this.introActive()) return;
+
+    const wordmark = this.introWordmark()?.nativeElement;
+    const title = this.loginTitle()?.nativeElement;
+
+    // Sin medidas (tests sin layout, navegadores raros) la intro no aporta
+    // nada: mejor sacarla en el próximo tick y dejar el login limpio.
+    if (!wordmark || !title || !this.layoutIntro(wordmark, title)) {
+      this.scheduleIntro(() => this.introActive.set(false), 0);
+      return;
+    }
+
+    this.scheduleIntro(() => this.introFlying.set(true), INTRO_FLIGHT_AT);
+    this.scheduleIntro(() => this.introDone.set(true), INTRO_FADE_AT);
+    this.scheduleIntro(() => this.introActive.set(false), INTRO_END_AT);
+  }
+
+  /** Tocar la intro la saltea: corta los timers y la desvanece rápido. */
+  skipIntro(): void {
+    if (!this.introActive()) return;
+
+    this.clearIntroTimers();
+    this.introDone.set(true);
+    this.scheduleIntro(() => this.introActive.set(false), 300);
+  }
+
+  private scheduleIntro(action: () => void, delay: number): void {
+    this.introTimers.push(setTimeout(action, delay));
+  }
+
+  private clearIntroTimers(): void {
+    this.introTimers.forEach((timer) => clearTimeout(timer));
+    this.introTimers = [];
+  }
+
+  /**
+   * Mide el wordmark grande (con todas las letras) y el logo real del login.
+   * Deja en variables CSS el ancho de la S, la m y "plit" (los keyframes los
+   * despliegan) y el desplazamiento/escala del vuelo final.
+   */
+  private layoutIntro(wordmark: HTMLElement, title: HTMLElement): boolean {
+    const sizes = this.measureWordmark(wordmark);
+    const target = title.getBoundingClientRect();
+
+    if (sizes.full <= 0 || target.width <= 0) return false;
+
+    wordmark.style.setProperty('--intro-s-w', `${sizes.s}px`);
+    wordmark.style.setProperty('--intro-m-w', `${sizes.m}px`);
+    wordmark.style.setProperty('--intro-plit-w', `${sizes.plit}px`);
+
+    // El wordmark se agranda simétricamente desde el centro, así que el
+    // centro actual (con la K sola) es el mismo que tendrá ya armado.
+    const start = wordmark.getBoundingClientRect();
+    const startCenterX = start.left + start.width / 2;
+    const startCenterY = start.top + start.height / 2;
+
+    const targetCenterX = target.left + target.width / 2;
+    const targetCenterY = target.top + target.height / 2;
+
+    wordmark.style.setProperty('--intro-dx', `${targetCenterX - startCenterX}px`);
+    wordmark.style.setProperty('--intro-dy', `${targetCenterY - startCenterY}px`);
+    wordmark.style.setProperty('--intro-scale', `${target.width / sizes.full}`);
+
+    return true;
+  }
+
+  /** Copia oculta del wordmark para medir el ancho natural de cada parte. */
+  private measureWordmark(wordmark: HTMLElement): {
+    full: number;
+    s: number;
+    m: number;
+    plit: number;
+  } {
+    const clone = wordmark.cloneNode(true) as HTMLElement;
+    clone.style.position = 'fixed';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.visibility = 'hidden';
+    clone.style.pointerEvents = 'none';
+    clone.style.transition = 'none';
+
+    clone.querySelectorAll<HTMLElement>('.intro-char').forEach((char) => {
+      char.style.animation = 'none';
+      char.style.opacity = '1';
+      char.style.maxWidth = 'none';
+      char.style.overflow = 'visible';
+    });
+
+    document.body.appendChild(clone);
+
+    const full = clone.getBoundingClientRect().width;
+    const s =
+      clone.querySelector<HTMLElement>('.intro-s')?.getBoundingClientRect()
+        .width ?? 0;
+    const m =
+      clone.querySelector<HTMLElement>('.intro-m')?.getBoundingClientRect()
+        .width ?? 0;
+    const plit =
+      clone.querySelector<HTMLElement>('.intro-plit')?.getBoundingClientRect()
+        .width ?? 0;
+
+    clone.remove();
+
+    return { full, s, m, plit };
+  }
+
+  /** Detecta accesibilidad: evitar la intro si se pidió menos movimiento. */
+  private static prefersReducedMotion(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
 
   submit(): void {
     if (this.form.invalid) {
