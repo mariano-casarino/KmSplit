@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Pantallas que requieren sesión: no aportan nada a los buscadores.
+Disallow: /vehiculos
+Disallow: /vehiculo/
+Disallow: /perfil
+Disallow: /grupo
+Disallow: /grupos
+Disallow: /notificaciones
