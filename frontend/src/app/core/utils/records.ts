@@ -12,7 +12,7 @@ export type RecordKind = 'trip' | 'fuel';
 
 /** Cuánto dura el resaltado al llegar desde una notificación. Es una señal
  *  para que llame la atención, no un estado permanente. */
-export const HIGHLIGHT_FLASH_MS = 1000;
+export const HIGHLIGHT_FLASH_MS = 2000;
 
 /** Clave estable de un registro, para matchear y para mandar por query param. */
 export function recordKey(kind: RecordKind, id: number): string {
