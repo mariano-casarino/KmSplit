@@ -63,6 +63,9 @@ interface KmGap {
 /** Umbral en días para considerar a un período "atrasado" (acento rojo). */
 const STALE_PERIOD_DAYS = 14;
 
+/** Registros que se muestran al entrar al historial y en cada "Ver más". */
+const HISTORY_PAGE_SIZE = 15;
+
 /** Formateador de fechas reutilizable: `toLocaleDateString` con opciones crea un
  *  formateador ICU nuevo en cada llamada, y acá se llama una vez por período. */
 const FECHA_CORTA = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit' });
@@ -97,6 +100,8 @@ export class HistoryComponent implements OnInit, OnDestroy {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   filter = signal<FilterKey>('todos');
+  /** Cuántos registros de la lista se muestran (15 al entrar, +15 por "Ver más"). */
+  private readonly visibleCount = signal(HISTORY_PAGE_SIZE);
   /** Muestra los 3 primeros huecos; al pulsar "ver más" se despliegan todos. */
   showAllGaps = signal(false);
 
@@ -233,6 +238,21 @@ export class HistoryComponent implements OnInit, OnDestroy {
     if (this.filter() === 'cargas') return all.filter((r) => r.type === 'fuel');
     return all;
   });
+
+  /** Los registros que se pintan: 15 al entrar, y crece con "Ver más"/"Ver todo". */
+  readonly visibleRecords = computed<HistoryRecord[]>(() =>
+    this.records().slice(0, this.visibleCount()),
+  );
+
+  /** Quedan registros ocultos detrás de "Ver más"? */
+  readonly hasMoreRecords = computed(
+    () => this.visibleCount() < this.records().length,
+  );
+
+  /** La lista es más larga que la página inicial (para ofrecer "Ver menos"). */
+  readonly canCollapseRecords = computed(
+    () => this.records().length > HISTORY_PAGE_SIZE,
+  );
 
   /**
    * Recorre CADA período (cada liquidación cerrada + el período abierto
@@ -385,6 +405,30 @@ export class HistoryComponent implements OnInit, OnDestroy {
     this.showAllGaps.update((v) => !v);
   }
 
+  /** Cambia la pestaña y vuelve al tamaño inicial de la lista. */
+  setFilter(filter: FilterKey): void {
+    if (this.filter() === filter) return;
+    this.filter.set(filter);
+    this.visibleCount.set(HISTORY_PAGE_SIZE);
+  }
+
+  /** Suma una página más de registros (15). */
+  showMoreRecords(): void {
+    this.visibleCount.update((count) =>
+      Math.min(count + HISTORY_PAGE_SIZE, this.records().length),
+    );
+  }
+
+  /** Despliega todos los registros de la pestaña actual. */
+  showAllRecords(): void {
+    this.visibleCount.set(this.records().length);
+  }
+
+  /** Vuelve a la página inicial de 15 registros. */
+  collapseRecords(): void {
+    this.visibleCount.set(HISTORY_PAGE_SIZE);
+  }
+
   /** Abre el form de viaje con el km inicial y final del hueco ya prefijados
    *  (?kmInicio= & kmFin=). Al guardar, vuelve al mismo histórico (returnTo). */
   onGapClick(gap: KmGap): void {
@@ -438,6 +482,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
 
     const key = resolveHighlightKey(request, this.records());
     if (key) {
+      this.revealRecord(key);
       this.flashHighlight.flash(key);
       this.scrollToRecord(key);
       return;
@@ -448,6 +493,15 @@ export class HistoryComponent implements OnInit, OnDestroy {
       this.router.navigate(recordViewSegments(this.vehicleId, next), {
         queryParams: { highlight: this.highlight },
       });
+    }
+  }
+
+  /** Si el registro resaltado quedó debajo de la página visible, agranda la
+   *  página hasta incluirlo: sin la fila en el DOM no hay a dónde scrollear. */
+  private revealRecord(key: string): void {
+    const index = this.records().findIndex((record) => record.id === key);
+    if (index >= this.visibleCount()) {
+      this.visibleCount.set(index + 1);
     }
   }
 
