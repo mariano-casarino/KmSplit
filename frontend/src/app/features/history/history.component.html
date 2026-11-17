@@ -43,13 +43,13 @@
     }
 
     <div class="tabs">
-      <button class="tab" type="button" [class.active]="filter() === 'todos'" (click)="filter.set('todos')">
+      <button class="tab" type="button" [class.active]="filter() === 'todos'" (click)="setFilter('todos')">
         Todos
       </button>
-      <button class="tab" type="button" [class.active]="filter() === 'viajes'" (click)="filter.set('viajes')">
+      <button class="tab" type="button" [class.active]="filter() === 'viajes'" (click)="setFilter('viajes')">
         Viajes
       </button>
-      <button class="tab" type="button" [class.active]="filter() === 'cargas'" (click)="filter.set('cargas')">
+      <button class="tab" type="button" [class.active]="filter() === 'cargas'" (click)="setFilter('cargas')">
         Cargas
       </button>
     </div>
@@ -58,7 +58,7 @@
       <p class="muted empty-message">No hay registros para mostrar acá.</p>
     } @else {
       <div class="records-list">
-        @for (record of records(); track record.id) {
+        @for (record of visibleRecords(); track record.id) {
           <button
             class="record-row"
             type="button"
@@ -79,6 +79,23 @@
           </button>
         }
       </div>
+
+      @if (hasMoreRecords()) {
+        <div class="records-actions">
+          <button class="btn btn-secondary" type="button" (click)="showMoreRecords()">
+            Ver más
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="showAllRecords()">
+            Ver todo
+          </button>
+        </div>
+      } @else if (canCollapseRecords()) {
+        <div class="records-actions">
+          <button class="btn btn-secondary" type="button" (click)="collapseRecords()">
+            Ver menos
+          </button>
+        </div>
+      }
     }
 
     @if (scope === 'week') {
