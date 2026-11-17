@@ -100,6 +100,10 @@
 }
 
 .settlement-row {
+  position: relative;
+  /* contexto de apilado propio: así la capa de fondo del hover (::before, con
+     z-index -1) queda detrás del contenido y no tapa el ojo */
+  z-index: 0;
   width: 100%;
   display: flex;
   align-items: center;
@@ -114,15 +118,41 @@
   color: inherit;
   cursor: pointer;
   appearance: none;
+  /* sin el retardo de 300ms del doble tap: el primer toque navega al toque */
+  touch-action: manipulation;
 
   &:last-child {
     border-bottom: none;
   }
 
-  &:hover {
+  /* Capa de fondo del hover (::before, z-index -1 para quedar detrás del texto
+     y del ojo). Los left/right negativos la extienden hasta el borde de la caja
+     --su padding es de 12px-- sin tocar el layout: antes el hover corría la
+     fila con margin negativo + padding, y con box-sizing:border-box el padding
+     se comía el ancho, así que el ojo se iba 12px a la izquierda y el primer
+     toque en mobile quedaba fuera del botón. La lista recorta con
+     overflow:hidden, así que la capa respeta el borde redondeado. */
+  &::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    right: -12px;
+    top: 0;
+    bottom: 0;
+    z-index: -1;
     background: var(--gray-100);
-    margin: 0 -12px;
-    padding: 11px 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+
+  /* Solo en dispositivos con mouse: en mobile el :hover queda "pegado" y el
+     navegador puede aplicarlo antes del click. Sin hover, nada se mueve. */
+  @media (hover: hover) {
+    &:hover::before {
+      opacity: 1;
+      transition-duration: 0.15s;
+    }
   }
 }
 

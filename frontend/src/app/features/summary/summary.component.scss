@@ -72,6 +72,9 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--gray-300) transparent;
+  /* reserva el ancho de la barra desde el principio: cuando aparece (o se va
+     al scrollear) el contenido no se achica y el lápiz no se corre */
+  scrollbar-gutter: stable;
 }
 
 .record-row {
@@ -95,6 +98,8 @@
   color: inherit;
   appearance: none;
   cursor: default;
+  /* sin el retardo de 300ms del doble tap: el primer toque navega al toque */
+  touch-action: manipulation;
 
   &:last-child {
     border-bottom: none;
@@ -147,9 +152,13 @@
     transition: opacity 0.45s ease;
   }
 
-  &.clickable:hover:not(.highlighted)::before {
-    opacity: 1;
-    transition-duration: 0.15s;
+  /* Solo en dispositivos con mouse: en mobile el :hover queda "pegado" y el
+     navegador puede aplicarlo antes del click. Sin hover, nada se mueve. */
+  @media (hover: hover) {
+    &.clickable:hover:not(.highlighted)::before {
+      opacity: 1;
+      transition-duration: 0.15s;
+    }
   }
 
   /* Fila a la que se llegó desde una notificación: celeste en toda la fila,
