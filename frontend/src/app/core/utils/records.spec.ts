@@ -4,6 +4,7 @@ import {
   createFlashHighlight,
   highlightRequestFor,
   idsWithUnregisteredGap,
+  isoDaysAgo,
   notificationTarget,
   parseHighlightRequest,
   recordKey,
@@ -17,6 +18,19 @@ describe('recordKey', () => {
   it('arma la clave con tipo y id', () => {
     expect(recordKey('trip', 12)).toBe('trip-12');
     expect(recordKey('fuel', 7)).toBe('fuel-7');
+  });
+});
+
+describe('isoDaysAgo', () => {
+  it('devuelve la fecha de hace N días', () => {
+    const now = new Date('2026-03-10T12:00:00Z');
+    expect(isoDaysAgo(0, now)).toBe('2026-03-10');
+    expect(isoDaysAgo(7, now)).toBe('2026-03-03');
+  });
+
+  it('cruza fin de mes y de año', () => {
+    expect(isoDaysAgo(7, new Date('2026-03-03T12:00:00Z'))).toBe('2026-02-24');
+    expect(isoDaysAgo(7, new Date('2026-01-03T12:00:00Z'))).toBe('2025-12-27');
   });
 });
 

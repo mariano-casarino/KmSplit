@@ -28,17 +28,16 @@ import { formatKm, formatMoney } from '../../core/utils/format-args';
 import {
   createFlashHighlight,
   idsWithUnregisteredGap,
+  isoDaysAgo,
   parseHighlightRequest,
   recordKey,
   recordViewSegments,
   recordViewToOpen,
   resolveHighlightKey,
+  WEEK_DAYS,
 } from '../../core/utils/records';
 
 type PeriodKey = 'semana' | 'mes' | '3meses';
-
-/** Registros que se listan en "Últimos registros" del resumen. */
-const RECENT_RECORDS_LIMIT = 5;
 
 interface RecentRecord {
   id: string;
@@ -171,17 +170,11 @@ export class SummaryComponent implements OnInit, OnDestroy {
     return this.settlements()[0] ?? null;
   }
 
-
-
-  private daysSince(iso: string): number {
-    const t = new Date(iso).getTime();
-    if (Number.isNaN(t)) return 0;
-    return (Date.now() - t) / 86_400_000;
-  }
-
-  /** Últimos registros con la misma forma y reglas de navegación que el
-   *  historial: orden por km (el más reciente, más cerca del odómetro, va
-   *  primero).
+  /** Últimos registros de los últimos 7 días con la misma forma y reglas de
+   *  navegación que el historial: orden por km (el más reciente, más cerca del
+   *  odómetro, va primero).
+   *
+   *  No se corta en N: el box del resumen tiene scroll y muestra ~6 filas.
    *
    *  `computed` y no getter: el template lo pedía 2 veces por pasada de change
    *  detection (el `@if` de vacío y el `@for`) y cada vez armaba un map+sort de
@@ -191,43 +184,46 @@ export class SummaryComponent implements OnInit, OnDestroy {
     const canEditAny = role === 'owner' || role === 'admin';
     const currentUserId = this.currentUserId();
     const memberName = (userId: number) => this.memberNames().get(userId) ?? 'Usuario';
+    const cutoff = isoDaysAgo(WEEK_DAYS);
 
-    const tripRecords: RecentRecord[] = this.trips().map((t) => ({
-      id: recordKey('trip', t.id),
-      date: t.trip_date,
-      sortKey: t.start_km,
-      type: 'trip' as const,
-      userName: memberName(t.user),
-      userId: t.user,
-      label: `${formatKm(t.km_traveled)} km / ${formatKm(t.start_km)} → ${formatKm(t.end_km)} km `,
-      tripId: t.id,
-      // un miembro puede editar sus propios viajes (igual que en el historial),
-      // aunque no pueda tocar los de los demás
-      clickable: canEditAny || t.user === currentUserId,
-    }));
+    const tripRecords: RecentRecord[] = this.trips()
+      .filter((t) => t.trip_date >= cutoff)
+      .map((t) => ({
+        id: recordKey('trip', t.id),
+        date: t.trip_date,
+        sortKey: t.start_km,
+        type: 'trip' as const,
+        userName: memberName(t.user),
+        userId: t.user,
+        label: `${formatKm(t.km_traveled)} km / ${formatKm(t.start_km)} → ${formatKm(t.end_km)} km `,
+        tripId: t.id,
+        // un miembro puede editar sus propios viajes (igual que en el historial),
+        // aunque no pueda tocar los de los demás
+        clickable: canEditAny || t.user === currentUserId,
+      }));
 
     const fuelLoadToSettlement = this.fuelLoadToSettlement();
-    const fuelRecords: RecentRecord[] = this.fuelLoads().map((f) => {
-      const settlementId = fuelLoadToSettlement.get(f.id);
-      return {
-        id: recordKey('fuel', f.id),
-        date: f.load_date,
-        sortKey: f.odometer_km,
-        type: 'fuel' as const,
-        userName: memberName(f.loaded_by),
-        userId: f.loaded_by,
-        label: `$${formatMoney(f.amount)}`,
-        settlementId,
-        clickable: !!settlementId,
-      };
-    });
+    const fuelRecords: RecentRecord[] = this.fuelLoads()
+      .filter((f) => f.load_date >= cutoff)
+      .map((f) => {
+        const settlementId = fuelLoadToSettlement.get(f.id);
+        return {
+          id: recordKey('fuel', f.id),
+          date: f.load_date,
+          sortKey: f.odometer_km,
+          type: 'fuel' as const,
+          userName: memberName(f.loaded_by),
+          userId: f.loaded_by,
+          label: `$${formatMoney(f.amount)}`,
+          settlementId,
+          clickable: !!settlementId,
+        };
+      });
 
-    return [...tripRecords, ...fuelRecords]
-      .sort((a, b) => {
-        if (a.sortKey !== b.sortKey) return b.sortKey - a.sortKey;
-        return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
-      })
-      .slice(0, RECENT_RECORDS_LIMIT);
+    return [...tripRecords, ...fuelRecords].sort((a, b) => {
+      if (a.sortKey !== b.sortKey) return b.sortKey - a.sortKey;
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+    });
   });
 
   /**
